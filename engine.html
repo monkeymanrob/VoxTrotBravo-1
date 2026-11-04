@@ -151,11 +151,11 @@
         <input type="file" id="vtb-file-input" accept=".vtb" style="display: none;" />
     </div>
 
-<script type="module">
+    <script type="module">
         import * as THREE from 'three';
         import { VRButton } from 'three/addons/webxr/VRButton.js';
 
-        (document.readyState === 'loading' ? document.addEventListener.bind(document, 'DOMContentLoaded') : (fn) => fn())(() => {
+        document.addEventListener('DOMContentLoaded', () => {
 
         // --- Configuration & Global State ---
         const VOXEL_SIZE = 0.05; 
@@ -316,19 +316,14 @@
         let selectFilter = 'all';
         let transformMode = 'move'; 
         let numCopies = 1; 
-let hasSelection = false;
-        const SEL_LIMIT = 150000;
+        let hasSelection = false;
+        const SEL_LIMIT = 500000;
         
         let baseSelectionCount = 0;
-        const baseSelection = new Array(SEL_LIMIT);
+        const baseSelection = Array.from({length: SEL_LIMIT}, () => ({x:0, y:0, z:0, color: new THREE.Color(), mat: 0}));
         
         let selectedVoxelsCount = 0;
-        const selectedVoxels = new Array(SEL_LIMIT);
-
-        for (let i = 0; i < SEL_LIMIT; i++) {
-            baseSelection[i] = { x: 0, y: 0, z: 0, color: new THREE.Color(), mat: 0 };
-            selectedVoxels[i] = { x: 0, y: 0, z: 0, color: new THREE.Color(), mat: 0 };
-        }
+        const selectedVoxels = Array.from({length: SEL_LIMIT}, () => ({x:0, y:0, z:0, color: new THREE.Color(), mat: 0}));
         
         const selectionCenter = new THREE.Vector3();
         const pivotPoint = new THREE.Vector3();
@@ -592,18 +587,25 @@ let hasSelection = false;
         const FILL_NEIGHBORS = [1,0,0, -1,0,0, 0,1,0, 0,-1,0, 0,0,1, 0,0,-1];
         const SEL_DIRS = [1,0,0, -1,0,0, 0,1,0, 0,-1,0, 0,0,1, 0,0,-1, 1,1,0, -1,-1,0, 1,-1,0, -1,1,0, 1,0,1, -1,0,-1, 1,0,-1, -1,0,1, 0,1,1, 0,-1,-1, 0,1,-1, 0,-1,1, 1,1,1, -1,-1,-1, 1,-1,1, -1,1,-1, 1,1,-1, -1,-1,1, 1,-1,-1, -1,1,1];
 
-// --- Scene Setup ---
+        // --- Scene Setup ---
         const canvas = document.createElement('canvas');
         document.body.appendChild(canvas);
+        
+        let gl;
+        try { gl = canvas.getContext('webgl2', { xrCompatible: true, powerPreference: "high-performance", antialias: true }); } 
+        catch(e) { console.warn("WebGL2 xrCompatible request failed, falling back."); }
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x111111);
 
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.25, 1000);
     camera.position.set(0, 1.6, 3);
+    
+
 
         const renderer = new THREE.WebGLRenderer({ 
             canvas: canvas, 
+            context: gl, 
             antialias: false, 
             powerPreference: "high-performance" 
         });
