@@ -614,6 +614,15 @@
         renderer.xr.enabled = true;
 
         document.body.appendChild(VRButton.createButton(renderer));
+// Automatically end active WebXR sessions on page reload or close
+        const cleanupXRSession = () => {
+            const activeSession = renderer.xr.getSession();
+            if (activeSession) {
+                activeSession.end().catch(() => {});
+            }
+        };
+        window.addEventListener('pagehide', cleanupXRSession);
+        window.addEventListener('beforeunload', cleanupXRSession);
 
         // --- Quest 3 PCVR Specific Optimizations ---
         renderer.xr.addEventListener('sessionstart', () => {
