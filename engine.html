@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo PCVR v2.3
+    VoxTrotBravo PCVR v2.5 - performance and memory revision
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -134,7 +134,7 @@
     </div>
 
     <div id="ui-container">
-        <h1>VoxTrotBravo PCVR v2.4</h1>
+        <h1>VoxTrotBravo PCVR v2.5</h1>
         <p><b>Right Trigger:</b> Draw / Select / Sliders | <b>Left Trigger:</b> Erase / Drop Selection</p>
         <p><b>Grips:</b> Grab to Move, Scale & Rotate World</p>
         <p><b>A & B (Right):</b> Tools & Settings | <b>X & Y (Left):</b> Tool Options & Materials</p>
@@ -330,10 +330,20 @@
         const SEL_LIMIT = 500000;
         
         let baseSelectionCount = 0;
-        const baseSelection = Array.from({length: SEL_LIMIT}, () => ({x:0, y:0, z:0, color: new THREE.Color(), mat: 0}));
+        // Allocate selection records only when they are used. The previous code built
+        // 500,000 color objects for EACH selection array at startup (~1M objects).
+        const baseSelection = [];
+        function selectionRecord(records, index) {
+            let record = records[index];
+            if (record === undefined) {
+                record = { x: 0, y: 0, z: 0, color: new THREE.Color(), mat: 0 };
+                records[index] = record;
+            }
+            return record;
+        }
         
         let selectedVoxelsCount = 0;
-        const selectedVoxels = Array.from({length: SEL_LIMIT}, () => ({x:0, y:0, z:0, color: new THREE.Color(), mat: 0}));
+        const selectedVoxels = [];
         
         const selectionCenter = new THREE.Vector3();
         const pivotPoint = new THREE.Vector3();
@@ -633,9 +643,9 @@
                     session.renderState.baseLayer.fixedFoveation = 1; 
                 }
                 if (session.supportedFrameRates) {
-                    if (session.supportedFrameRates.includes(120)) {
-                        session.updateTargetFrameRate(120).catch(console.warn);
-                    } else if (session.supportedFrameRates.includes(90)) {
+                    // Target 90Hz when available: 11.1 ms per frame rather than 8.3 ms at 120Hz.
+                    // Retain the runtime-selected refresh rate on other headsets.
+                    if (session.supportedFrameRates.includes(90)) {
                         session.updateTargetFrameRate(90).catch(console.warn);
                     }
                 }
@@ -732,7 +742,7 @@
             constructor(cx, cy, cz, matType) {
                 this.matType = matType;
                 this.material = voxelMaterials[matType];
-                this.capacity = 4096; 
+                this.capacity = 256; // Grow as needed; sparse chunks no longer reserve 4,096 instances per material.
                 this.count = 0;
                 this.mesh = new THREE.InstancedMesh(voxelGeometry, this.material, this.capacity);
                 this.mesh.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); 
@@ -751,8 +761,8 @@
 
                 this.ptsPos = new Float32Array(this.capacity * 3);
                 const ptsGeo = new THREE.BufferGeometry();
-                ptsGeo.setAttribute('position', new THREE.BufferAttribute(this.ptsPos, 3));
-                ptsGeo.setAttribute('color', new THREE.BufferAttribute(this.mesh.instanceColor.array, 3, true));
+                ptsGeo.setAttribute('position', new THREE.BufferAttribute(this.ptsPos, 3).setUsage(THREE.DynamicDrawUsage));
+                ptsGeo.setAttribute('color', new THREE.BufferAttribute(this.mesh.instanceColor.array, 3, true).setUsage(THREE.DynamicDrawUsage));
                 this.pointsMesh = new THREE.Points(ptsGeo, perfMaterials[matType]);
                 this.pointsMesh.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
                 this.pointsMesh.matrixAutoUpdate = false; this.pointsMesh.updateMatrix();
@@ -765,6 +775,8 @@
                 this.voxelToIndex.fill(65535); 
                 this.indexToLocal = new Uint16Array(CHUNK_VOL); 
                 this.needsUpdate = false;
+                this.geometryDirty = false;
+                this.colorDirty = false;
                 this.dirtyMin = Infinity;
                 this.dirtyMax = -1;
             }
@@ -792,6 +804,8 @@
                     this.dirtyMin = 0;
                     if (this. count - 1 > this.dirtyMax) this.dirtyMax = this.count - 1;
                     this.needsUpdate = true;
+                    this.geometryDirty = true;
+                    this.colorDirty = true;
                 }
                 
                 this.mesh.count = this.count;
@@ -801,8 +815,8 @@
                 oldMesh.dispose();
 
                 const ptsGeo = new THREE.BufferGeometry();
-                ptsGeo.setAttribute('position', new THREE.BufferAttribute(this.ptsPos, 3));
-                ptsGeo.setAttribute('color', new THREE.BufferAttribute(this.mesh.instanceColor.array, 3, true));
+                ptsGeo.setAttribute('position', new THREE.BufferAttribute(this.ptsPos, 3).setUsage(THREE.DynamicDrawUsage));
+                ptsGeo.setAttribute('color', new THREE.BufferAttribute(this.mesh.instanceColor.array, 3, true).setUsage(THREE.DynamicDrawUsage));
                 ptsGeo.boundingSphere = oldMesh.boundingSphere;
                 this.pointsMesh = new THREE.Points(ptsGeo, oldPtsMesh.material);
                 this.pointsMesh.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
@@ -824,9 +838,12 @@
                     if (cArr[idx] !== r || cArr[idx+1] !== g || cArr[idx+2] !== b) {
                         cArr[idx] = r; cArr[idx+1] = g; cArr[idx+2] = b;
                         this.needsUpdate = true;
+                        this.colorDirty = true;
                         if (instIdx < this.dirtyMin) this.dirtyMin = instIdx;
                         if (instIdx > this.dirtyMax) this.dirtyMax = instIdx;
+                        return true;
                     }
+                    return false;
                 } else {
                     if (this.count >= this.capacity) this.resizeCapacity(Math.min(CHUNK_VOL, this.capacity * 2));
                     const instIdx = this.count;
@@ -841,8 +858,11 @@
                     
                     this.count++; this.mesh.count = this.count; totalActiveVoxels++;
                     this.needsUpdate = true;
+                    this.geometryDirty = true;
+                    this.colorDirty = true;
                     if (instIdx < this.dirtyMin) this.dirtyMin = instIdx;
                     if (instIdx > this.dirtyMax) this.dirtyMax = instIdx;
+                    return true;
                 }
             }
 
@@ -879,9 +899,13 @@
                     this.voxelToIndex[localIdx] = 65535;
                     this.count--; this.mesh.count = this.count; totalActiveVoxels--; 
                     this.needsUpdate = true;
+                    this.geometryDirty = true;
+                    this.colorDirty = true;
                     if (instIdxToRemove < this.dirtyMin) this.dirtyMin = instIdxToRemove;
                     if (instIdxToRemove > this.dirtyMax) this.dirtyMax = instIdxToRemove;
+                    return true;
                 }
+                return false;
             }
 
 
@@ -900,12 +924,14 @@
 
                         const countItems = this.dirtyMax - this.dirtyMin + 1;
                         if (renderMode === 'standard') {
-                            setSingleFrameRange(this.mesh.instanceMatrix, this.dirtyMin * 16, countItems * 16);
-                            setSingleFrameRange(this.mesh.instanceColor, this.dirtyMin * 3, countItems * 3);
+                            // Recoloring existing voxels updates only RGB; never upload 64-byte
+                            // instance matrices when all positions are unchanged.
+                            if (this.geometryDirty) setSingleFrameRange(this.mesh.instanceMatrix, this.dirtyMin * 16, countItems * 16);
+                            if (this.colorDirty) setSingleFrameRange(this.mesh.instanceColor, this.dirtyMin * 3, countItems * 3);
                             this.pointsStale = true;
                         } else {
-                            setSingleFrameRange(this.pointsMesh.geometry.attributes.position, this.dirtyMin * 3, countItems * 3);
-                            setSingleFrameRange(this.pointsMesh.geometry.attributes.color, this.dirtyMin * 3, countItems * 3);
+                            if (this.geometryDirty) setSingleFrameRange(this.pointsMesh.geometry.attributes.position, this.dirtyMin * 3, countItems * 3);
+                            if (this.colorDirty) setSingleFrameRange(this.pointsMesh.geometry.attributes.color, this.dirtyMin * 3, countItems * 3);
                             this.meshStale = true;
                         }
                     }
@@ -916,6 +942,8 @@
                     this.pointsMesh.visible = this.count > 0 && renderMode === 'performance';
 
                     this.needsUpdate = false;
+                    this.geometryDirty = false;
+                    this.colorDirty = false;
                     this.dirtyMin = Infinity;
                     this.dirtyMax = -1;
                 }
@@ -936,17 +964,16 @@
                 if (currentMat !== -1 && currentMat !== matType) this.layers[currentMat].removeVoxel(localIdx);
                 if (!this.layers[matType]) this.layers[matType] = new ChunkLayer(this.cx, this.cy, this.cz, matType);
                 this.voxelMatMap[localIdx] = matType;
-                this.layers[matType].addVoxel(localIdx, gx, gy, gz, color);
-                dirtyChunks.add(this);
+                const changed = this.layers[matType].addVoxel(localIdx, gx, gy, gz, color);
+                if (changed || currentMat !== matType) dirtyChunks.add(this);
             }
 
             removeVoxel(lx, ly, lz) {
                 const localIdx = lx | (ly << 5) | (lz << 10);
                 const currentMat = this.voxelMatMap[localIdx];
                 if (currentMat !== -1) {
-                    this.layers[currentMat].removeVoxel(localIdx);
+                    if (this.layers[currentMat].removeVoxel(localIdx)) dirtyChunks.add(this);
                     this.voxelMatMap[localIdx] = -1;
-                    dirtyChunks.add(this);
                 }
             }
 
@@ -1132,25 +1159,38 @@ const bucketPreviewMesh = new THREE.InstancedMesh(voxelGeometry, new THREE.MeshB
 	selectionGroup.frustumCulled = false;
 	worldGroup.add(selectionGroup);
 
-        const selMeshSolid = new THREE.InstancedMesh(voxelGeometry, matSolid, SEL_LIMIT); selMeshSolid.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); selMeshSolid.matrixAutoUpdate = false; selMeshSolid.instanceMatrix.setUsage(THREE.DynamicDrawUsage); selMeshSolid.instanceColor = new THREE.InstancedBufferAttribute(new Uint8Array(SEL_LIMIT * 3), 3, true);
-        const selMeshGlass = new THREE.InstancedMesh(voxelGeometry, matGlass, SEL_LIMIT); selMeshGlass.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); selMeshGlass.matrixAutoUpdate = false; selMeshGlass.instanceMatrix.setUsage(THREE.DynamicDrawUsage); selMeshGlass.instanceColor = new THREE.InstancedBufferAttribute(new Uint8Array(SEL_LIMIT * 3), 3, true);
-        const selMeshEmission = new THREE.InstancedMesh(voxelGeometry, matEmission, SEL_LIMIT); selMeshEmission.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); selMeshEmission.matrixAutoUpdate = false; selMeshEmission.instanceMatrix.setUsage(THREE.DynamicDrawUsage); selMeshEmission.instanceColor = new THREE.InstancedBufferAttribute(new Uint8Array(SEL_LIMIT * 3), 3, true);
-        const selMeshMetal = new THREE.InstancedMesh(voxelGeometry, matMetal, SEL_LIMIT); selMeshMetal.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); selMeshMetal.matrixAutoUpdate = false; selMeshMetal.instanceMatrix.setUsage(THREE.DynamicDrawUsage); selMeshMetal.instanceColor = new THREE.InstancedBufferAttribute(new Uint8Array(SEL_LIMIT * 3), 3, true);
-        
-        [selMeshSolid, selMeshGlass, selMeshEmission, selMeshMetal].forEach(mesh => {
-            const mArr = mesh.instanceMatrix.array;
-            for(let i=0; i<SEL_LIMIT; i++) { mArr[i*16]=1; mArr[i*16+5]=1; mArr[i*16+10]=1; mArr[i*16+15]=1; }
+        // Selection buffers are allocated on demand. Preserve the original 500k
+        // selection ceiling, but do NOT allocate 4 x 500k matrices and 4 x 500k
+        // points buffers before there is an active selection.
+        const SEL_GPU_INITIAL_CAPACITY = 1024;
+        let selectionGpuCapacity = SEL_GPU_INITIAL_CAPACITY;
+        const selMeshSolid = new THREE.InstancedMesh(voxelGeometry, matSolid, selectionGpuCapacity);
+        const selMeshGlass = new THREE.InstancedMesh(voxelGeometry, matGlass, selectionGpuCapacity);
+        const selMeshEmission = new THREE.InstancedMesh(voxelGeometry, matEmission, selectionGpuCapacity);
+        const selMeshMetal = new THREE.InstancedMesh(voxelGeometry, matMetal, selectionGpuCapacity);
+        const selectionMeshes = [selMeshSolid, selMeshGlass, selMeshEmission, selMeshMetal];
+        selectionMeshes.forEach(mesh => {
+            mesh.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
+            mesh.matrixAutoUpdate = false;
+            mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            mesh.instanceColor = new THREE.InstancedBufferAttribute(new Uint8Array(selectionGpuCapacity * 3), 3, true);
+            mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+            mesh.count = 0;
+            const arr = mesh.instanceMatrix.array;
+            for (let i = 0; i < selectionGpuCapacity; i++) {
+                arr[i*16] = arr[i*16+5] = arr[i*16+10] = arr[i*16+15] = 1;
+            }
         });
-
-        const selPtsAttrPosSolid = new THREE.BufferAttribute(new Float32Array(SEL_LIMIT * 3), 3);
-        const selPtsAttrPosGlass = new THREE.BufferAttribute(new Float32Array(SEL_LIMIT * 3), 3);
-        const selPtsAttrPosEmission = new THREE.BufferAttribute(new Float32Array(SEL_LIMIT * 3), 3);
-        const selPtsAttrPosMetal = new THREE.BufferAttribute(new Float32Array(SEL_LIMIT * 3), 3);
-
-        const selPtsAttrColSolid = new THREE.BufferAttribute(selMeshSolid.instanceColor.array, 3, true);
-        const selPtsAttrColGlass = new THREE.BufferAttribute(selMeshGlass.instanceColor.array, 3, true);
-        const selPtsAttrColEmission = new THREE.BufferAttribute(selMeshEmission.instanceColor.array, 3, true);
-        const selPtsAttrColMetal = new THREE.BufferAttribute(selMeshMetal.instanceColor.array, 3, true);
+        const selectionPosAttrs = selectionMeshes.map(() => {
+            const a = new THREE.BufferAttribute(new Float32Array(selectionGpuCapacity * 3), 3);
+            a.setUsage(THREE.DynamicDrawUsage);
+            return a;
+        });
+        const selectionColorAttrs = selectionMeshes.map(mesh => {
+            const a = new THREE.BufferAttribute(mesh.instanceColor.array, 3, true);
+            a.setUsage(THREE.DynamicDrawUsage);
+            return a;
+        });
 
         const selBoxMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 0.9 });
         const selBoxMesh = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), selBoxMat);
@@ -1164,6 +1204,56 @@ const bucketPreviewMesh = new THREE.InstancedMesh(voxelGeometry, new THREE.MeshB
 	previewContainer.frustumCulled = false;
 	worldGroup.add(previewContainer);
         const previewGroups = [];
+
+        function ensureSelectionVisualCapacity(required) {
+            if (required <= selectionGpuCapacity) return;
+            let next = selectionGpuCapacity;
+            while (next < required && next < SEL_LIMIT) next = Math.min(SEL_LIMIT, next * 2);
+            for (let materialIndex = 0; materialIndex < 4; materialIndex++) {
+                const mesh = selectionMeshes[materialIndex];
+                const previousCapacity = selectionGpuCapacity;
+                const oldMatrix = mesh.instanceMatrix.array;
+                const oldColors = mesh.instanceColor.array;
+                const newMatrixArray = new Float32Array(next * 16);
+                newMatrixArray.set(oldMatrix);
+                for (let i = previousCapacity; i < next; i++) {
+                    const k = i * 16;
+                    newMatrixArray[k] = newMatrixArray[k+5] = newMatrixArray[k+10] = newMatrixArray[k+15] = 1;
+                }
+                const newColorArray = new Uint8Array(next * 3);
+                newColorArray.set(oldColors);
+                const newPositionArray = new Float32Array(next * 3);
+                newPositionArray.set(selectionPosAttrs[materialIndex].array);
+
+                // Dispose the old instance GPU buffers before replacing attributes.
+                mesh.dispose();
+                mesh.instanceMatrix = new THREE.InstancedBufferAttribute(newMatrixArray, 16);
+                mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                mesh.instanceColor = new THREE.InstancedBufferAttribute(newColorArray, 3, true);
+                mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+                const newPos = new THREE.BufferAttribute(newPositionArray, 3);
+                newPos.setUsage(THREE.DynamicDrawUsage);
+                const newCol = new THREE.BufferAttribute(newColorArray, 3, true);
+                newCol.setUsage(THREE.DynamicDrawUsage);
+                selectionPosAttrs[materialIndex] = newPos;
+                selectionColorAttrs[materialIndex] = newCol;
+
+                // Copies/mirrors have their own Points geometries but share the
+                // selection data. Rebind all of them after an allocation grows.
+                for (const group of previewGroups) {
+                    const pivot = group.children[0];
+                    const cloneMesh = pivot.children[materialIndex];
+                    cloneMesh.dispose();
+                    cloneMesh.instanceMatrix = mesh.instanceMatrix;
+                    cloneMesh.instanceColor = mesh.instanceColor;
+                    const pointMesh = pivot.children[materialIndex + 4];
+                    pointMesh.geometry.dispose();
+                    pointMesh.geometry.setAttribute('position', newPos);
+                    pointMesh.geometry.setAttribute('color', newCol);
+                }
+            }
+            selectionGpuCapacity = next;
+        }
 
 function updatePreviews() {
 
@@ -1181,10 +1271,10 @@ function updatePreviews() {
                     const m2 = new THREE.InstancedMesh(voxelGeometry, matGlass, 1); m2.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); m2.frustumCulled = false; m2.matrixAutoUpdate = false;
                     const m3 = new THREE.InstancedMesh(voxelGeometry, matEmission, 1); m3.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); m3.frustumCulled = false; m3.matrixAutoUpdate = false;
                     const m4 = new THREE.InstancedMesh(voxelGeometry, matMetal, 1); m4.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); m4.frustumCulled = false; m4.matrixAutoUpdate = false;
-                    const p1 = new THREE.Points(new THREE.BufferGeometry(), perfMaterials[0]); p1.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); p1.frustumCulled = false; p1.matrixAutoUpdate = false; p1.geometry.setAttribute('position', selPtsAttrPosSolid); p1.geometry.setAttribute('color', selPtsAttrColSolid);
-                    const p2 = new THREE.Points(new THREE.BufferGeometry(), perfMaterials[1]); p2.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); p2.frustumCulled = false; p2.matrixAutoUpdate = false; p2.geometry.setAttribute('position', selPtsAttrPosGlass); p2.geometry.setAttribute('color', selPtsAttrColGlass);
-                    const p3 = new THREE.Points(new THREE.BufferGeometry(), perfMaterials[2]); p3.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); p3.frustumCulled = false; p3.matrixAutoUpdate = false; p3.geometry.setAttribute('position', selPtsAttrPosEmission); p3.geometry.setAttribute('color', selPtsAttrColEmission);
-                    const p4 = new THREE.Points(new THREE.BufferGeometry(), perfMaterials[3]); p4.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); p4.frustumCulled = false; p4.matrixAutoUpdate = false; p4.geometry.setAttribute('position', selPtsAttrPosMetal); p4.geometry.setAttribute('color', selPtsAttrColMetal);
+                    const p1 = new THREE.Points(new THREE.BufferGeometry(), perfMaterials[0]); p1.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); p1.frustumCulled = false; p1.matrixAutoUpdate = false; p1.geometry.setAttribute('position', selectionPosAttrs[0]); p1.geometry.setAttribute('color', selectionColorAttrs[0]);
+                    const p2 = new THREE.Points(new THREE.BufferGeometry(), perfMaterials[1]); p2.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); p2.frustumCulled = false; p2.matrixAutoUpdate = false; p2.geometry.setAttribute('position', selectionPosAttrs[1]); p2.geometry.setAttribute('color', selectionColorAttrs[1]);
+                    const p3 = new THREE.Points(new THREE.BufferGeometry(), perfMaterials[2]); p3.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); p3.frustumCulled = false; p3.matrixAutoUpdate = false; p3.geometry.setAttribute('position', selectionPosAttrs[2]); p3.geometry.setAttribute('color', selectionColorAttrs[2]);
+                    const p4 = new THREE.Points(new THREE.BufferGeometry(), perfMaterials[3]); p4.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); p4.frustumCulled = false; p4.matrixAutoUpdate = false; p4.geometry.setAttribute('position', selectionPosAttrs[3]); p4.geometry.setAttribute('color', selectionColorAttrs[3]);
                     const bMesh = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), selBoxMat); bMesh.matrixAutoUpdate = false; bMesh.frustumCulled = false;
                     pivotGroup.add(m1, m2, m3, m4, p1, p2, p3, p4, bMesh);
                     previewContainer.add(g); previewGroups.push(g);
@@ -3532,6 +3622,8 @@ function handleRightMenuClick(cx, cy) {
                     }
                 }
                 chunks.clear();
+                cachedChunkKey = NaN;
+                cachedChunk = null;
                 totalActiveVoxels = 0;
 
                 // 2. Restore world transform, palette, materials, symmetry, and tool settings
@@ -3742,6 +3834,8 @@ function handleRightMenuClick(cx, cy) {
                         layer.dirtyMin = 0;
                         layer.dirtyMax = count - 1;
                         layer.needsUpdate = true;
+                        layer.geometryDirty = true;
+                        layer.colorDirty = true;
                         totalActiveVoxels += count;
                     }
                     dirtyChunks.add(chunk);
@@ -4499,13 +4593,14 @@ function handleRightMenuClick(cx, cy) {
         }
 
         function updateSelectionVisuals() {
+            ensureSelectionVisualCapacity(selectedVoxelsCount);
             selMeshSolid.count = selMeshGlass.count = selMeshEmission.count = selMeshMetal.count = 0;
             let iS = 0, iG = 0, iE = 0, iM = 0, minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
             const arrS = selMeshSolid.instanceMatrix.array, colS = selMeshSolid.instanceColor.array;
             const arrG = selMeshGlass.instanceMatrix.array, colG = selMeshGlass.instanceColor.array;
             const arrE = selMeshEmission.instanceMatrix.array, colE = selMeshEmission.instanceColor.array;
             const arrM = selMeshMetal.instanceMatrix.array, colM = selMeshMetal.instanceColor.array;
-            const ptsS = selPtsAttrPosSolid.array, ptsG = selPtsAttrPosGlass.array, ptsE = selPtsAttrPosEmission.array, ptsM = selPtsAttrPosMetal.array;
+            const ptsS = selectionPosAttrs[0].array, ptsG = selectionPosAttrs[1].array, ptsE = selectionPosAttrs[2].array, ptsM = selectionPosAttrs[3].array;
             for(let i=0; i<selectedVoxelsCount; i++) {
                 const v = selectedVoxels[i];
                 const r = Math.round(v.color.r*255), g = Math.round(v.color.g*255), b = Math.round(v.color.b*255);
@@ -4529,10 +4624,10 @@ function handleRightMenuClick(cx, cy) {
                 setAttrRange(selMeshEmission.instanceMatrix, iE * 16); setAttrRange(selMeshEmission.instanceColor, iE * 3);
                 setAttrRange(selMeshMetal.instanceMatrix, iM * 16); setAttrRange(selMeshMetal.instanceColor, iM * 3);
             } else {
-                setAttrRange(selPtsAttrPosSolid, iS * 3); setAttrRange(selPtsAttrColSolid, iS * 3);
-                setAttrRange(selPtsAttrPosGlass, iG * 3); setAttrRange(selPtsAttrColGlass, iG * 3);
-                setAttrRange(selPtsAttrPosEmission, iE * 3); setAttrRange(selPtsAttrColEmission, iE * 3);
-                setAttrRange(selPtsAttrPosMetal, iM * 3); setAttrRange(selPtsAttrColMetal, iM * 3);
+                setAttrRange(selectionPosAttrs[0], iS * 3); setAttrRange(selectionColorAttrs[0], iS * 3);
+                setAttrRange(selectionPosAttrs[1], iG * 3); setAttrRange(selectionColorAttrs[1], iG * 3);
+                setAttrRange(selectionPosAttrs[2], iE * 3); setAttrRange(selectionColorAttrs[2], iE * 3);
+                setAttrRange(selectionPosAttrs[3], iM * 3); setAttrRange(selectionColorAttrs[3], iM * 3);
             }
             
             selMeshSolid.count = iS; selMeshGlass.count = iG; selMeshEmission.count = iE; selMeshMetal.count = iM;
@@ -4613,7 +4708,7 @@ function handleRightMenuClick(cx, cy) {
                         }
 
                         if (ov && selectedVoxelsCount < SEL_LIMIT) {
-                            const v = selectedVoxels[selectedVoxelsCount++];
+                            const v = selectionRecord(selectedVoxels, selectedVoxelsCount++);
                             v.x = x; v.y = y; v.z = z;
                             v.color.copy(ov.color);
                             v.mat = ov.mat;
@@ -4695,7 +4790,7 @@ function handleRightMenuClick(cx, cy) {
 
             hasSelection = true; selectionGroup.position.set(0,0,0); selectionGroup.quaternion.identity(); selectionCenter.set((minX+maxX)/2, (minY+maxY)/2, (minZ+maxZ)/2);
             pivotPoint.copy(selectionCenter); pivotIndicator.position.set(pivotPoint.x*VOXEL_SIZE, pivotPoint.y*VOXEL_SIZE, pivotPoint.z*VOXEL_SIZE); pivotIndicator.updateMatrix(); pivotIndicator.visible = true;
-            selectedVoxelsCount = baseSelectionCount; for(let i=0; i<baseSelectionCount; i++) { const s=selectedVoxels[i], b=baseSelection[i]; s.x=b.x; s.y=b.y; s.z=b.z; s.color.copy(b.color); s.mat=b.mat; } updateSelectionVisuals(); leftMenuNeedsUpdate = true;
+            selectedVoxelsCount = baseSelectionCount; for(let i=0; i<baseSelectionCount; i++) { const s=selectionRecord(selectedVoxels, i), b=baseSelection[i]; s.x=b.x; s.y=b.y; s.z=b.z; s.color.copy(b.color); s.mat=b.mat; } updateSelectionVisuals(); leftMenuNeedsUpdate = true;
         }
 
                 function executeSelectBox(start, end) {
@@ -4725,7 +4820,7 @@ function handleRightMenuClick(cx, cy) {
                                           (selectFilter === 'material' && m === startMat);
                             
                             if (isMatch && baseSelectionCount < SEL_LIMIT) { 
-                                const v = baseSelection[baseSelectionCount++]; 
+                                const v = selectionRecord(baseSelection, baseSelectionCount++); 
                                 v.x = gx; v.y = gy; v.z = gz; 
                                 v.color.copy(localVoxelColor); 
                                 v.mat = m; 
@@ -4758,7 +4853,7 @@ function handleRightMenuClick(cx, cy) {
                 const x = selQueue[qH++], y = selQueue[qH++], z = selQueue[qH++]; 
                 const m = getVoxelMatAndColor(x, y, z, localVoxelColor);
                 if (m !== -1) {
-                    const v = baseSelection[baseSelectionCount++]; 
+                    const v = selectionRecord(baseSelection, baseSelectionCount++); 
                     v.x = x; v.y = y; v.z = z; 
                     v.color.copy(localVoxelColor); 
                     v.mat = m;
@@ -6656,7 +6751,15 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                     for (let i = 0; i < 4; i++) {
                         const layer = chunk.layers[i];
                         if (layer && layer.count > 0) {
+                            if (layer.pointsStale) {
+                                const pos = layer.pointsMesh.geometry.attributes.position;
+                                const col = layer.pointsMesh.geometry.attributes.color;
+                                pos.clearUpdateRanges(); pos.addUpdateRange(0, layer.count * 3); pos.needsUpdate = true;
+                                col.clearUpdateRanges(); col.addUpdateRange(0, layer.count * 3); col.needsUpdate = true;
+                                layer.pointsStale = false;
+                            }
                             layer.mesh.visible = false;
+                            layer.pointsMesh.geometry.setDrawRange(0, layer.count);
                             layer.pointsMesh.visible = true;
                         }
                     }
@@ -7325,7 +7428,9 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
             }
             if (renderMode === 'performance') {
                 const effSize = VOXEL_SIZE * 1.15 * worldGroup.scale.y;
-                for (let i = 0; i < perfMaterials.length; i++) perfMaterials[i].size = effSize;
+                for (let i = 0; i < perfMaterials.length; i++) {
+                    if (perfMaterials[i].size !== effSize) perfMaterials[i].size = effSize;
+                }
             }
         renderer.render(scene, camera);
 
