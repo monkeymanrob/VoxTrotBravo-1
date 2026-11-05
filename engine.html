@@ -157,6 +157,16 @@
 
         document.addEventListener('DOMContentLoaded', () => {
 
+        // Workaround for a Chromium + Quest Link WebXR Layers freeze.
+        // Force Three.js r160 to use XRWebGLLayer (the working legacy path).
+        // Run before a WebXR session is requested.
+        if (typeof XRRenderState !== 'undefined') {
+            const legacyXR = Reflect.deleteProperty(XRRenderState.prototype, 'layers')
+                && !('layers' in XRRenderState.prototype);
+            console.info('VoxTrotBravo legacy WebXR layer:', legacyXR ? 'enabled' : 'not enabled');
+        }
+
+
         // --- Configuration & Global State ---
         const VOXEL_SIZE = 0.05; 
         const CHUNK_SIZE = 32;   
