@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo PCVR v2.5 - performance and memory revision
+    VoxTrotBravo PCVR v4.0 - Cassette Workstation / functional navigation
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -8,65 +8,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo — Spatial Studio v3.0 · Rob Reynolds</title>
+    <title>VoxTrotBravo — Cassette Workstation v4.0 · Rob Reynolds</title>
     <style>
-        :root { color-scheme: dark; --ink: #dfeaf3; --muted: #91a9ba; --accent: #52ddde; --accent2: #a4f7bb; --surface: rgba(13,21,31,.91); --line: rgba(147,196,215,.19); }
-        * { box-sizing: border-box; }
-        body { margin:0; overflow:hidden; background:#080d15; color:var(--ink); font-family:Inter,'Segoe UI',system-ui,sans-serif; }
-        canvas { display:block; }
-        button { font:inherit; }
-        .glass-surface { background:var(--surface); border:1px solid var(--line); box-shadow:0 18px 48px rgba(0,0,0,.28); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
-        #ui-container { position:absolute; top:18px; left:18px; width:310px; border-radius:17px; z-index:100; pointer-events:auto; overflow:hidden; }
-        .brand-head { display:flex; align-items:center; justify-content:space-between; padding:16px 17px 12px; border-bottom:1px solid var(--line); }
-        .brand-logo { display:flex; align-items:center; gap:11px; }
-        .brand-mark { width:39px; height:39px; border:1px solid #52ddde; border-radius:12px; display:grid; place-items:center; font-size:21px; font-weight:800; letter-spacing:-2px; color:var(--accent); background:linear-gradient(140deg,rgba(82,221,222,.17),rgba(82,221,222,.035)); }
-        .brand-head h1 { margin:0; font-size:16px; letter-spacing:.03em; font-weight:750; }
-        .brand-head small { font-size:10px; letter-spacing:.2em; color:var(--muted); }
-        .icon-btn { cursor:pointer; display:grid; place-items:center; width:34px; height:34px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--ink); }
-        .icon-btn:hover,.icon-btn:focus-visible { background:rgba(82,221,222,.18); border-color:var(--accent); }
-        .ui-content { padding:14px 17px 16px; }
-        .eyebrow { color:var(--accent); text-transform:uppercase; font-weight:750; font-size:10px; letter-spacing:.2em; }
-        .head-sub { margin:5px 0 13px; font-size:12px; line-height:1.6; color:var(--muted); }
-        .command-rows { display:grid; gap:8px; }
-        .command { display:grid; grid-template-columns:62px 1fr; align-items:start; gap:9px; font-size:11px; color:var(--muted); line-height:1.42; }
-        .command b { display:block; border:1px solid #2b4351; border-radius:6px; padding:5px 3px; color:#cbf0f0; background:#152633; text-align:center; font-size:10px; white-space:nowrap; }
-        .shortcut-foot { font-size:10px; border-top:1px solid var(--line); margin-top:13px; padding-top:10px; color:var(--muted); line-height:1.6; }
-        .shortcut-foot strong { color:#b3ffcd; }
-        #ui-container.compact .ui-content { display:none; }
-        #workspace-status { position:absolute; top:18px; right:18px; padding:12px 16px; min-width:218px; border-radius:14px; z-index:95; pointer-events:none; }
-        .status-heading { display:flex; justify-content:space-between; gap:20px; font-size:10px; letter-spacing:.14em; color:var(--muted); }
-        .status-heading span:last-child { color:var(--accent2); }
-        .status-value { font-size:25px; font-weight:750; line-height:1.22; font-variant-numeric:tabular-nums; margin:4px 0 2px; }
-        .status-detail { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; }
-        #tools-drawer { position:absolute; top:90px; right:18px; width:285px; max-height:calc(100vh - 210px); overflow:auto; padding:15px; border-radius:14px; z-index:101; }
-        #tools-drawer[hidden] { display:none; }
-        .drawer-head { display:flex; justify-content:space-between; align-items:center; margin:0 0 12px; }
-        .drawer-head h2 { font-size:14px; margin:0; letter-spacing:.07em; }
-        #desktop-tool-list { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-        .tool-tile { text-align:left; border:1px solid var(--line); background:#132332; color:var(--ink); border-radius:9px; padding:9px 8px; font-size:11px; cursor:pointer; min-height:39px; }
-        .tool-tile:hover { border-color:#81dbe4; background:#1d3a47; }
-        .tool-tile.active { border-color:var(--accent); color:#d7ffff; background:#1e4850; }
-        .tool-tile small { display:block; color:var(--muted); font-size:9px; margin-top:2px; }
-        .drawer-note { font-size:11px; line-height:1.5; color:var(--muted); margin:13px 0 0; }
-        .section-label { font-size:10px; font-weight:700; letter-spacing:.14em; color:var(--accent); margin:14px 0 8px; text-transform:uppercase; }
-        .snap-control { display:flex; gap:6px; }
-        .snap-control button { cursor:pointer; border:1px solid var(--line); border-radius:8px; background:#152633; color:var(--ink); flex:1; padding:8px 5px; }
-        .snap-control button.active { background:#1e5055; border-color:var(--accent); color:white; }
-        #file-controls-overlay { position:absolute; bottom:82px; left:50%; transform:translateX(-50%); display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:7px; max-width:calc(100vw - 24px); padding:8px; border-radius:16px; z-index:1001; pointer-events:auto; }
-        .overlay-action-btn { cursor:pointer; border:1px solid var(--line); border-radius:10px; background:#1d303f; color:var(--ink); font-size:12px; letter-spacing:.015em; font-weight:700; padding:11px 15px; transition:background .12s, border-color .12s; white-space:nowrap; }
-        .overlay-action-btn:hover,.overlay-action-btn:focus-visible { background:#315767; border-color:var(--accent); }
-        #save-button-overlay { background:#215749; border-color:#4b9e86; }
-        #load-button-overlay { background:#28385b; border-color:#586d9d; }
-        #folder-button-overlay { background:#4d3b30; border-color:#8d6b51; }
-        #tool-drawer-toggle { border-color:#5691a0; background:#183c47; }
-        .dock-mark { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.15em; padding:0 6px; white-space:nowrap; }
-        #loading-overlay { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 40%,#142b35 0%,#080f18 62%); color:var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10000; transition:opacity .4s; }
-        #loading-overlay h2 { font-size:27px; margin:0; letter-spacing:.06em; }
-        #loading-overlay p { font-size:12px; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; }
-        .spinner { width:40px; height:40px; border:3px solid #2d4855; border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin-top:20px; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        @media(max-width:760px) { #ui-container { top:9px; left:9px; width:245px; } .brand-head { padding:10px; } .brand-head h1 { font-size:13px; } .ui-content { padding:10px; } #workspace-status { top:9px; right:9px; padding:9px; min-width:143px; } .status-value { font-size:19px; } #tools-drawer { top:80px; right:9px; max-height:60vh; } #file-controls-overlay { width:calc(100vw - 18px); bottom:74px; } .overlay-action-btn { padding:9px 10px; font-size:11px; } .dock-mark { display:none; } }
-    </style>
+:root{color-scheme:dark;--ink:#f0e8d3;--muted:#aeb8ac;--accent:#ffb064;--accent2:#b4e58b;--surface:#1b2521;--line:#56685a}
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111715;color:var(--ink);font-family:Consolas,'Lucida Console',monospace}canvas{display:block}button{font:inherit}
+.glass-surface{background:var(--surface);border:2px solid #59685f;box-shadow:4px 5px 0 #0c1310}
+#ui-container{position:absolute;top:18px;left:18px;width:336px;z-index:100;pointer-events:auto;overflow:hidden}
+.brand-head{display:flex;align-items:center;justify-content:space-between;padding:15px;border-bottom:2px solid #59685f;background:repeating-linear-gradient(90deg,#29362f 0,#29362f 7px,#222e27 7px,#222e27 9px)}
+.brand-logo{display:flex;align-items:center;gap:10px}.brand-mark{width:42px;height:42px;border:2px solid var(--accent);background:#1b2821;display:grid;place-items:center;font-size:26px;font-weight:900;color:var(--accent)}
+.brand-head h1{margin:0;font-size:14px;letter-spacing:.03em}.brand-head small{font-size:9px;letter-spacing:.18em;color:var(--muted)}
+.icon-btn{cursor:pointer;width:33px;height:33px;border:1px solid #72816f;background:#172019;color:var(--ink)}.icon-btn:hover{border-color:var(--accent)}
+.ui-content{padding:15px}.eyebrow,.section-label{color:var(--accent);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.15em}.head-sub{font-size:11px;line-height:1.6;color:var(--muted);margin:8px 0 13px}.command-rows{display:grid;gap:8px}.command{display:grid;grid-template-columns:84px 1fr;gap:8px;align-items:center;color:#d0d8c9;font-size:10px;line-height:1.5}.command b{background:#111b15;border:1px solid #677968;border-left:3px solid var(--accent);text-align:center;font-size:9px;padding:7px 2px}.shortcut-foot{font-size:10px;color:var(--muted);line-height:1.6;margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}.shortcut-foot strong{color:var(--accent2)}#ui-container.compact .ui-content{display:none}
+#workspace-status{position:absolute;top:18px;right:18px;padding:13px 16px;min-width:228px;z-index:95;pointer-events:none}.status-heading{display:flex;justify-content:space-between;gap:12px;font-size:10px;color:var(--muted)}.status-heading span:last-child{color:var(--accent2)}.status-value{font-size:27px;font-weight:800;line-height:1.4;font-variant-numeric:tabular-nums}.status-detail{display:flex;justify-content:space-between;color:var(--muted);font-size:10px}
+#tools-drawer{position:absolute;top:105px;right:18px;width:322px;max-height:calc(100vh - 225px);overflow:auto;padding:14px;z-index:101}#tools-drawer[hidden]{display:none}.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.drawer-head h2{font-size:13px;color:var(--accent);margin:0}.drawer-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}.drawer-tabs button{cursor:pointer;background:#151f19;color:var(--muted);border:1px solid #5c6e61;padding:10px 4px;font-size:10px}.drawer-tabs button.active{background:var(--accent);border-color:#ffdfa0;color:#161e17;font-weight:900}#desktop-tool-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tool-tile{text-align:left;cursor:pointer;border:1px solid #5d7060;border-left:3px solid #8a927a;background:#19261d;color:var(--ink);font-size:11px;min-height:49px;padding:8px}.tool-tile[hidden]{display:none}.tool-tile:hover{border-color:var(--accent);background:#38352a}.tool-tile.active{background:#5a462c;border-color:#ffd492}.tool-tile small{display:block;color:var(--muted);margin-top:3px;font-size:9px}.drawer-note{font-size:10px;line-height:1.5;color:var(--muted);margin:12px 0}.section-label{margin:15px 0 9px}.snap-control{display:flex;gap:6px}.snap-control button{flex:1;cursor:pointer;border:1px solid #7a8871;background:#18241b;color:var(--ink);padding:9px 5px}.snap-control button.active{background:var(--accent);color:#1b261c;font-weight:900}
+#file-controls-overlay{position:absolute;bottom:83px;left:50%;transform:translateX(-50%);display:flex;gap:7px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 24px);padding:7px;z-index:1001;pointer-events:auto}.overlay-action-btn{cursor:pointer;background:#27362e;border:1px solid #74826c;color:var(--ink);font-size:11px;padding:12px 14px;font-weight:800;white-space:nowrap}.overlay-action-btn:hover{border-color:var(--accent);background:#473d2d}#save-button-overlay{background:#2e4830}#load-button-overlay{background:#283a34}#folder-button-overlay{background:#493727}#tool-drawer-toggle{background:#563c23;border-color:#b58b51}.dock-mark{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--accent);padding:0 6px}
+#loading-overlay{position:absolute;inset:0;background:#131d17;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity .4s}#loading-overlay h2{font-size:25px;margin:0}#loading-overlay p{color:var(--accent);font-size:12px}.spinner{height:37px;width:37px;border:3px solid #405546;border-top-color:var(--accent);border-radius:50%;margin-top:20px;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:750px){#ui-container{top:8px;left:8px;width:260px}.brand-head{padding:9px}.brand-head h1{font-size:12px}.ui-content{padding:10px}#workspace-status{top:8px;right:8px;min-width:140px;padding:8px}.status-value{font-size:19px}#tools-drawer{top:80px;right:8px;max-height:60vh}#file-controls-overlay{width:calc(100vw - 18px);bottom:74px}.overlay-action-btn{font-size:10px;padding:8px}.dock-mark{display:none}}
+</style>
     <script type="importmap">
         {
             "imports": {
@@ -79,28 +37,28 @@
 <body>
     <div id="loading-overlay">
         <h2>VoxTrotBravo PCVR</h2>
-        <p>Initializing the spatial workspace…</p>
+        <p>Loading the cassette workstation…</p>
         <div class="spinner"></div>
     </div>
 
     <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
-        <div class="brand-head"><div class="brand-logo"><div class="brand-mark">V</div><div><small>VOXTROTBRAVO</small><h1>Spatial Studio <span style="color:#52ddde">3.0</span></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
-        <div class="ui-content"><div class="eyebrow">Controller quick guide</div><p class="head-sub">Sculpt in space. All original tools and controls are retained in the VR wrist menus.</p>
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark">V</div><div><small>VOXTROTBRAVO</small><h1>Cassette Workstation <span style="color:#ffb064">4.0</span></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="ui-content"><div class="eyebrow">Controller quick guide</div><p class="head-sub">Work in four steps: choose a tool, tune its controls, pick materials, then manage the workspace.</p>
             <div class="command-rows">
-                <div class="command"><b>A · Right</b><span>Tool library · 14 tools</span></div>
-                <div class="command"><b>B · Right</b><span>Workspace · symmetry · files · rotation snap</span></div>
-                <div class="command"><b>X · Left</b><span>Active tool parameters and selection transforms</span></div>
-                <div class="command"><b>Y · Left</b><span>Materials, colors and textures</span></div>
+                <div class="command"><b>A · Right</b><span>Current tool settings / rotate</span></div>
+                <div class="command"><b>B · Right</b><span>Material and color controls</span></div>
+                <div class="command"><b>X · Left</b><span>Mark / Forms / Edit tool index</span></div>
+                <div class="command"><b>Y · Left</b><span>Studio / symmetry / arrays / files</span></div>
                 <div class="command"><b>Triggers</b><span>Right to draw/select · left to erase/drop</span></div>
                 <div class="command"><b>Grips</b><span>Move, scale and rotate the world</span></div>
             </div>
-            <div class="shortcut-foot"><strong>Precision:</strong> Rotate with 1°, 5°, or 15° snapping. Tap ± on each rotation axis for exact nudges.<br>© 2024–2026 Rob Reynolds. All rights reserved.</div>
+            <div class="shortcut-foot"><strong>Precision:</strong> Tap 1°, 5°, or 15° in Select options or the Studio panel. Exact rotation nudges are available on A.<br>© 2024–2026 Rob Reynolds. All rights reserved.</div>
         </div>
     </section>
     <section id="workspace-status" class="glass-surface" aria-label="Project statistics"><div class="status-heading"><span>LIVE WORKSPACE</span><span id="hud-current-tool">BRUSH</span></div><div class="status-value" id="hud-voxels">0</div><div class="status-detail"><span>VOXELS</span><span id="hud-perf">READY</span></div></section>
-    <aside id="tools-drawer" class="glass-surface" hidden aria-label="Desktop tool library"><div class="drawer-head"><h2>Tool library</h2><button id="close-tool-drawer" class="icon-btn" aria-label="Close tool library">×</button></div><div id="desktop-tool-list"></div><p class="drawer-note">Tool parameters remain available on the left VR wrist menu (X). Select a tool here before entering VR or while the headset session is active.</p><div class="section-label">Rotation snapping</div><div id="desktop-snap-controls" class="snap-control"><button data-rot-snap="1" class="active">1°</button><button data-rot-snap="5">5°</button><button data-rot-snap="15">15°</button></div></aside>
+    <aside id="tools-drawer" class="glass-surface" hidden aria-label="Desktop tool library"><div class="drawer-head"><h2>Tool library</h2><button id="close-tool-drawer" class="icon-btn" aria-label="Close tool library">×</button></div><div id="desktop-tool-tabs" class="drawer-tabs"><button data-tool-page="mark">01 MARK</button><button data-tool-page="build">02 FORMS</button><button data-tool-page="edit">03 EDIT</button></div><div id="desktop-tool-list"></div><p class="drawer-note">In VR: X to choose, A for options, B for materials, Y for global controls. Recently used tools are accessible from EDIT.</p><div class="section-label">Rotation snapping</div><div id="desktop-snap-controls" class="snap-control"><button data-rot-snap="1" class="active">1°</button><button data-rot-snap="5">5°</button><button data-rot-snap="15">15°</button></div></aside>
     <div id="file-controls-overlay" class="glass-surface" role="toolbar" aria-label="Project file controls">
-        <span class="dock-mark">PROJECT</span>
+        <span class="dock-mark">VTB // DATA BAY</span>
         <button id="save-button-overlay" class="overlay-action-btn">Save .VTB</button>
         <button id="load-button-overlay" class="overlay-action-btn">Open .VTB</button>
         <button id="folder-button-overlay" class="overlay-action-btn" title="Grant folder access before entering VR to read/write project files directly">Link folder</button>
@@ -197,7 +155,7 @@
         function setRotationSnapStep(step) {
             if (![1,5,15].includes(step)) return;
             rotationSnapStep = step;
-            leftMenuNeedsUpdate = globalMenuNeedsUpdate = true;
+            leftMenuNeedsUpdate = globalMenuNeedsUpdate = rightMenuNeedsUpdate = true;
             document.querySelectorAll('[data-rot-snap]').forEach(b => {
                 const active = Number(b.dataset.rotSnap) === step;
                 b.classList.toggle('active',active);
@@ -1812,72 +1770,79 @@ function updatePlanePreview(start, end, isPainting) {
         const rightLaserLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
         rightLaserLine.scale.z = 5; rightLaserLine.visible = false; xrRight.add(rightLaserLine);
 
-        // Spatial Studio controller panels. All drawing uses the original interaction coordinates.
-        const studioPalette = { bg:'#09141e', surface:'#122733', surface2:'#19323f', border:'#345262', line:'#28434f', ink:'#dcebf4', muted:'#8bafbd', cyan:'#59e4df', lime:'#b7f2a0', soft:'#d5fdf6' };
-        function studioRound(ctx, x, y, w, h, radius=10) {
-            ctx.beginPath();
-            ctx.roundRect(x+0.5,y+0.5,Math.max(0,w-1),Math.max(0,h-1),Math.min(radius,w/2,h/2));
+        // Cassette workstation faceplates: cached 2D backgrounds, uploaded only when a menu is dirty.
+        const studioPalette={bg:'#19231d',surface:'#29372e',surface2:'#374638',border:'#728172',line:'#43594a',ink:'#f5ecd3',muted:'#b3bea8',cyan:'#ffb46a',lime:'#b6ee85',soft:'#fff0cc'};
+        const studioFaceplates=new Map();
+        function studioRound(ctx,x,y,w,h,r=3){ctx.beginPath();ctx.roundRect(x+.5,y+.5,Math.max(0,w-1),Math.max(0,h-1),Math.min(r,w/2,h/2));}
+        function studioPanel(ctx,width,height,accent=studioPalette.cyan){
+            const key=`${width}/${height}/${accent}`;
+            let bg=studioFaceplates.get(key);
+            if(!bg){
+                bg=document.createElement('canvas');bg.width=width;bg.height=height;
+                const p=bg.getContext('2d');
+                p.fillStyle='#1a241e';p.fillRect(0,0,width,height);
+                p.fillStyle='#26342a';p.fillRect(9,9,width-18,height-18);
+                p.fillStyle='#141e18';p.fillRect(15,15,width-30,32);
+                p.fillStyle=accent;p.fillRect(6,6,4,height-12);
+                p.strokeStyle='#788574';p.lineWidth=2;p.strokeRect(3,3,width-6,height-6);
+                p.fillStyle='#73806d';
+                for(const [x,y] of [[16,15],[width-16,15],[16,height-16],[width-16,height-16]]){
+                    p.beginPath();p.arc(x,y,3.1,0,Math.PI*2);p.fill();
+                    p.fillStyle='#1c271d';p.fillRect(x-2,y,4,1);p.fillStyle='#73806d';
+                }
+                p.fillStyle='#405345';for(let y=height-14;y<height-8;y+=3)p.fillRect(27,y,width-54,1);
+                p.fillStyle='#b1bfa9';p.font='700 9px Consolas,monospace';p.textAlign='right';p.fillText('VTB // 04',width-30,height-24);
+                studioFaceplates.set(key,bg);
+            }
+            ctx.drawImage(bg,0,0);
         }
-        function studioPanel(ctx, width, height, accent=studioPalette.cyan) {
-            ctx.clearRect(0,0,width,height);
-            const grad=ctx.createLinearGradient(0,0,width,height);
-            grad.addColorStop(0,'#112733'); grad.addColorStop(.47,'#091720'); grad.addColorStop(1,'#08111c');
-            ctx.fillStyle=grad;ctx.fillRect(0,0,width,height);
-            ctx.fillStyle='rgba(75,149,167,.055)';
-            for (let x=20;x<width;x+=32) ctx.fillRect(x,0,1,height);
-            for (let y=20;y<height;y+=32) ctx.fillRect(0,y,width,1);
-            ctx.fillStyle=accent;ctx.fillRect(0,0,5,height);
-            ctx.fillStyle='rgba(255,255,255,.04)';ctx.fillRect(5,0,width-5,42);
-            ctx.strokeStyle='rgba(132,205,220,.30)';ctx.lineWidth=2;ctx.strokeRect(1,1,width-2,height-2);
-            ctx.fillStyle='rgba(172,220,230,.08)';ctx.fillRect(18,41,width-36,1);
-        }
-        function studioHeader(ctx, title, tag, accent=studioPalette.cyan) {
+        function studioHeader(ctx,title,tag,accent=studioPalette.cyan){
             ctx.textBaseline='middle';ctx.textAlign='left';ctx.fillStyle=studioPalette.ink;
-            ctx.font='700 21px system-ui,sans-serif';ctx.fillText(title,22,22,300);
-            ctx.textAlign='right';ctx.font='700 11px system-ui,sans-serif';ctx.fillStyle=accent;ctx.fillText(tag.toUpperCase(),493,23,170);
+            ctx.font='700 19px Consolas,monospace';ctx.fillText(String(title).toUpperCase(),22,23,350);
+            ctx.textAlign='right';ctx.font='700 10px Consolas,monospace';ctx.fillStyle=accent;ctx.fillText(String(tag).toUpperCase(),492,23,142);
         }
-        function studioSection(ctx,label,y,width=470) {
-            ctx.textBaseline='middle';ctx.textAlign='left';ctx.font='700 13px system-ui,sans-serif';
-            ctx.fillStyle=studioPalette.muted;ctx.fillText(label.toUpperCase(),25,y);
-            ctx.strokeStyle='rgba(139,175,189,.22)';ctx.lineWidth=1;
-            const start=Math.min(480,50+label.length*8);ctx.beginPath();ctx.moveTo(start,y);ctx.lineTo(492,y);ctx.stroke();
+        function studioSection(ctx,label,y){
+            ctx.textAlign='left';ctx.textBaseline='middle';ctx.font='700 14px Consolas,monospace';
+            ctx.fillStyle=studioPalette.cyan;ctx.fillText(label.toUpperCase(),28,y);
+            ctx.strokeStyle='#6f816d';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(Math.min(480,55+label.length*10),y);ctx.lineTo(488,y);ctx.stroke();
         }
-        function drawButton(ctx, x, y, w, h, text, isActive) {
-            const active=Boolean(isActive);
-            studioRound(ctx,x,y,w,h,Math.min(10,h*.23));
-            ctx.fillStyle=active?'#245d61':(w<48?'#1b3643':'#152d3a');ctx.fill();
-            ctx.strokeStyle=active?'#69e9e2':'#3c5866';ctx.lineWidth=active?2:1.2;ctx.stroke();
-            if(active){ctx.fillStyle='#6ff7e9';studioRound(ctx,x+4,y+4,3,h-8,2);ctx.fill();}
-            const len=String(text).length;
-            let size=h<28?12:h<34?13:h<43?15:17;
-            if(w<65) size=Math.min(size,16);
-            if(w<44) size=Math.min(size,14);
-            if(len>18) size=Math.min(size,14);
-            if(len>26) size=Math.min(size,12);
-            ctx.fillStyle=active?'#ecffff':'#d7e7f0';ctx.font=`700 ${size}px system-ui,sans-serif`;
-            ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(text),x+w/2,y+h/2,w-8);
+        function drawButton(ctx,x,y,w,h,text,isActive){
+            const active=!!isActive;
+            studioRound(ctx,x,y,w,h,3);ctx.fillStyle=active?'#715331':'#29372e';ctx.fill();
+            studioRound(ctx,x,y,w,h,3);ctx.strokeStyle=active?'#ffe0a6':'#758474';ctx.lineWidth=active?2.3:1.1;ctx.stroke();
+            ctx.fillStyle=active?'#ffb36b':'#506451';ctx.fillRect(x+3,y+4,3,Math.max(0,h-8));
+            let size=h<27?11:h<35?13:h<43?14:16;
+            if(w<65)size=Math.min(size,14);
+            if(w<45)size=Math.min(size,12);
+            if(String(text).length>18)size=Math.min(size,13);
+            if(String(text).length>26)size=Math.min(size,11);
+            ctx.fillStyle=active?'#fff1cf':'#edf0dd';ctx.font=`700 ${size}px Consolas,monospace`;
+            ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(text),x+w/2,y+h/2,w-13);
         }
-        function drawSlider(ctx, x, y, w, h, label, val, min, max, format='') {
+        function drawSlider(ctx,x,y,w,h,label,val,min,max,format=''){
             const pct=Math.max(0,Math.min(1,(val-min)/(max-min)));
-            studioRound(ctx,x,y,w,h,8);ctx.fillStyle='#132c38';ctx.fill();
-            ctx.save();studioRound(ctx,x,y,w,h,8);ctx.clip();
-            ctx.fillStyle='#2d6770';ctx.fillRect(x,y,Math.max(2,w*pct),h);
-            ctx.fillStyle='rgba(200,255,250,.11)';ctx.fillRect(x+w*pct-2,y,3,h);
-            ctx.restore();
-            studioRound(ctx,x,y,w,h,8);ctx.strokeStyle='#456878';ctx.lineWidth=1.5;ctx.stroke();
+            studioRound(ctx,x,y,w,h,3);ctx.fillStyle='#152019';ctx.fill();
+            ctx.save();studioRound(ctx,x+2,y+2,w-4,h-4,2);ctx.clip();
+            ctx.fillStyle='#766745';ctx.fillRect(x,y,w*pct,h);
+            ctx.fillStyle='#ffcd83';ctx.fillRect(x+w*pct-2,y,4,h);ctx.restore();
+            studioRound(ctx,x,y,w,h,3);ctx.strokeStyle='#9ea086';ctx.lineWidth=1.4;ctx.stroke();
             const displayVal=Number.isInteger(val)?val:Number(val.toFixed(2));
             const caption=format?format.replace('%v',displayVal):`${label}: ${displayVal}°`;
-            ctx.fillStyle='#effaff';ctx.font=`700 ${h<34?14:16}px system-ui,sans-serif`;
-            ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(caption,x+w/2,y+h/2,w-12);
+            ctx.fillStyle='#fff3d6';ctx.font=`700 ${h<34?13:15}px Consolas,monospace`;
+            ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(caption,x+w/2,y+h/2,w-14);
         }
-        // Fine rotation: 1/5/15° slider snap plus exact +/- nudge buttons.
-        function drawRotationControl(ctx, y, label, value) {
+        function drawRotationControl(ctx,y,label,value){
             drawButton(ctx,50,y,40,30,'−',false);
             drawSlider(ctx,93,y,326,30,label,value,-180,180);
             drawButton(ctx,422,y,40,30,'+',false);
         }
+        function drawInlineRotationSnap(ctx,y,h){
+            drawButton(ctx,50,y,129,h,'1° FINE',rotationSnapStep===1);
+            drawButton(ctx,192,y,128,h,'5°',rotationSnapStep===5);
+            drawButton(ctx,333,y,129,h,'15°',rotationSnapStep===15);
+        }
         const leftMenuCanvas = document.createElement('canvas'); leftMenuCanvas.width = 512; leftMenuCanvas.height = 512;
-        const leftMenuCtx = leftMenuCanvas.getContext('2d', { willReadFrequently: true });
+        const leftMenuCtx = leftMenuCanvas.getContext('2d');
         const leftMenuTexture = new THREE.CanvasTexture(leftMenuCanvas);
         const leftMenuMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15), new THREE.MeshBasicMaterial({ map: leftMenuTexture, transparent: true, side: THREE.DoubleSide }));
         leftMenuMesh.visible = false; leftMenuMesh.position.set(0, 0.15, -0.05); leftMenuMesh.rotation.x = -Math.PI / 4;
@@ -1886,9 +1851,9 @@ function updatePlanePreview(start, end, isPainting) {
         function updateLeftMenuTexture() {
             studioPanel(leftMenuCtx,512,512);
             const activeInfo=studioTools.find(item=>item.id===activeTool);
-            studioHeader(leftMenuCtx,activeInfo?.name || activeTool,`${(activeInfo?.kind||'Tool').toUpperCase()} · ${totalActiveVoxels.toLocaleString()} VXL`);
+            studioHeader(leftMenuCtx,activeInfo?.name || activeTool,'A / TOOL OPTIONS');
             leftMenuCtx.fillStyle=studioPalette.muted;leftMenuCtx.textAlign='center';leftMenuCtx.font='11px system-ui,sans-serif';
-            leftMenuCtx.fillText('X · PARAMETER PANEL',256,503);
+            if(!(activeTool==='select'&&hasSelection&&transformMode==='copy')) leftMenuCtx.fillText('X TO CHANGE TOOLS / B FOR COLORS',256,503);
         if (activeTool === 'brush') {
             drawButton(leftMenuCtx, 50, 70, 130, 50, 'CUBE', brushShape === 'cube'); 
             drawButton(leftMenuCtx, 190, 70, 130, 50, 'SPHERE', brushShape === 'sphere');
@@ -2131,9 +2096,10 @@ function updatePlanePreview(start, end, isPainting) {
                         drawRotationControl(leftMenuCtx,370,'STEP Z',copyStepRotZ);
                         drawSlider(leftMenuCtx,50,405,412,30,'STEP SCALE',copyStepScale,0.1,5.0,'STEP SCL: %vx');
                         drawButton(leftMenuCtx, 50, 445, 130, 40, 'APPLY', false); drawButton(leftMenuCtx, 190, 445, 130, 40, 'CANCEL', false); drawButton(leftMenuCtx, 330, 445, 132, 40, 'DELETE', false);
+                        drawInlineRotationSnap(leftMenuCtx,486,21);
                     } else { drawButton(leftMenuCtx,50,270,130,40,'APPLY',false);drawButton(leftMenuCtx,190,270,130,40,'CANCEL',false);drawButton(leftMenuCtx,330,270,132,40,'DELETE',false);
                         leftMenuCtx.textAlign='center';leftMenuCtx.fillStyle=studioPalette.muted;leftMenuCtx.font='15px system-ui,sans-serif';
-                        leftMenuCtx.fillText('Select rotation snap in B · WORKSPACE',256,366);
+                        drawInlineRotationSnap(leftMenuCtx,328,36);
                     }
                 }
             }
@@ -2167,6 +2133,8 @@ function updatePlanePreview(start, end, isPainting) {
         }
         function handleLeftMenuClick(cx, cy) {
             if (activeTool === 'select' && hasSelection) {
+                const sy=transformMode==='copy'?486:328;const sh=transformMode==='copy'?21:36;
+                if(cy>=sy&&cy<=sy+sh){if(cx>=50&&cx<=179)setRotationSnapStep(1);else if(cx>=192&&cx<=320)setRotationSnapStep(5);else if(cx>=333&&cx<=462)setRotationSnapStep(15);return;}
 if (cy >= 60 && cy <= 90) {
     let newM = transformMode; 
     if (cx >= 15 && cx <= 77) { newM = 'move'; isSettingPivot = false; } 
@@ -2383,7 +2351,7 @@ if (cy >= 60 && cy <= 90) {
 
         let isPaletteMagnified = false;
         const colorMenuCanvas = document.createElement('canvas'); colorMenuCanvas.width = 512; colorMenuCanvas.height = 512;
-        const colorMenuCtx = colorMenuCanvas.getContext('2d', { willReadFrequently: true });
+        const colorMenuCtx = colorMenuCanvas.getContext('2d');
         const colorMenuTexture = new THREE.CanvasTexture(colorMenuCanvas);
         const colorMenuMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15), new THREE.MeshBasicMaterial({ map: colorMenuTexture, transparent: true, side: THREE.DoubleSide }));
         colorMenuMesh.visible = false; colorMenuMesh.position.set(0, 0.15, -0.05); colorMenuMesh.rotation.x = -Math.PI / 4;
@@ -2408,12 +2376,12 @@ if (cy >= 60 && cy <= 90) {
             studioPanel(colorMenuCtx,512,512,'#b7f2a0');
             const targetColor = slotColors[activeMatSlot][activeColorSubSlot];
             if (isPaletteMagnified) {
-                studioHeader(colorMenuCtx,'Precision Color','Y · RELEASE TO SET',studioPalette.lime);
+                studioHeader(colorMenuCtx,'Color Fine','B / RELEASE TO SET',studioPalette.lime);
                 drawColorPickerUI(colorMenuCtx, 256, 220, 150, 20, 400, 472, 30, targetColor, true);
                 colorMenuCtx.fillStyle = '#' + targetColor.getHexString(); colorMenuCtx.fillRect(20, 450, 472, 35);
                 targetColor.getHSL(tempHSL); colorMenuCtx.fillStyle = tempHSL.l > 0.6 ? 'black' : 'white'; colorMenuCtx.font = 'bold 20px sans-serif'; colorMenuCtx.fillText(`Release trigger to apply`, 256, 474);
             } else {
-                studioHeader(colorMenuCtx,'Materials','Y · COLOR LAB',studioPalette.lime);
+                studioHeader(colorMenuCtx,'Material Deck','B / COLORS + TEXTURE',studioPalette.lime);
                 drawButton(colorMenuCtx, 30, 42, 220, 42, 'SLOT 1 (MAIN)', activeMatSlot === 0); drawButton(colorMenuCtx, 262, 42, 220, 42, 'SLOT 2 (WIRE/DIV)', activeMatSlot === 1);
                 
                 const mType = matTypes[activeMatSlot];
@@ -2610,7 +2578,7 @@ if (cy >= 60 && cy <= 90) {
         }
 
         const rightMenuCanvas = document.createElement('canvas'); rightMenuCanvas.width = 512; rightMenuCanvas.height = 600;
-        const rightMenuCtx = rightMenuCanvas.getContext('2d', { willReadFrequently: true });
+        const rightMenuCtx = rightMenuCanvas.getContext('2d');
         const rightMenuTexture = new THREE.CanvasTexture(rightMenuCanvas);
         const rightMenuMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.175), new THREE.MeshBasicMaterial({ map: rightMenuTexture, transparent: true, side: THREE.DoubleSide }));
         rightMenuMesh.visible = false; rightMenuMesh.position.set(0, 0.16, -0.05); rightMenuMesh.rotation.x = -Math.PI / 4;
@@ -2618,11 +2586,12 @@ if (cy >= 60 && cy <= 90) {
 
         // Joystick Color Indicator UI
         const joyColorCanvas = document.createElement('canvas'); joyColorCanvas.width = 256; joyColorCanvas.height = 128;
-        const joyColorCtx = joyColorCanvas.getContext('2d', { willReadFrequently: true });
+        const joyColorCtx = joyColorCanvas.getContext('2d');
         const joyColorTexture = new THREE.CanvasTexture(joyColorCanvas);
         const joyColorMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.08), new THREE.MeshBasicMaterial({ map: joyColorTexture, transparent: true, side: THREE.DoubleSide }));
         joyColorMesh.visible = false; joyColorMesh.position.set(0, 0.10, -0.08); joyColorMesh.rotation.x = -Math.PI / 4;
         let joyColorActiveTimer = 0;
+        let lastJoyTextureUpdateTime = 0;
 
         function updateJoyColorTexture() {
             joyColorCtx.clearRect(0, 0, 256, 128);
@@ -2654,52 +2623,77 @@ if (cy >= 60 && cy <= 90) {
             joyColorTexture.needsUpdate = true;
         }
 
-        function updateRightMenuTexture() {
-            studioPanel(rightMenuCtx,512,600,'#8ba2ff');
-            studioHeader(rightMenuCtx,'Tool Library','A · 14 TOOLS','#a8b9ff');
-            const displayLabels = [
-                'BRUSH','EXTRUDE','LINE / ARC','PAINT','SOFT SCULPT','PLANE',
-                'BOX / VOLUME','QUAD SPHERE','CYLINDER','CONE / PYRAMID',
-                'PLATONIC SHAPES','SELECT / TRANSFORM','PARTICLE BRUSH','TORUS / ARCH'
-            ];
-            for(let i=0;i<studioTools.length;i++) {
-                const y=44+i*39;
-                const isCurrent=activeTool===studioTools[i].id;
-                rightMenuCtx.fillStyle=isCurrent?'#68e7dd':'#587987';
-                rightMenuCtx.font='700 12px system-ui,sans-serif';rightMenuCtx.textAlign='center';rightMenuCtx.textBaseline='middle';
-                rightMenuCtx.fillText(String(i+1).padStart(2,'0'),27,y+17);
-                drawButton(rightMenuCtx,50,y,412,34,displayLabels[i],isCurrent);
-                rightMenuCtx.textAlign='center';rightMenuCtx.font='700 9px system-ui,sans-serif';rightMenuCtx.fillStyle=isCurrent?'#baffc6':'#8ba8b9';
-                rightMenuCtx.fillText(studioTools[i].kind.toUpperCase(),485,y+17,44);
+        // Three navigation groups: tool count unchanged, but selection is now task-oriented.
+        const toolMenuGroups={mark:['brush','line','paint','sculpt','bouncy','extrude'],build:['plane','box','quadsphere','cylinder','triangle','icosahedron','torus'],edit:['select']};
+        let toolMenuPage='mark';
+        const recentToolIds=['brush'];
+        let toolMenuTargets=[];
+        function toolMenuButton(x,y,w,h,label,active,fn){
+            drawButton(rightMenuCtx,x,y,w,h,label,active);toolMenuTargets.push({x,y,w,h,fn});
+        }
+        function setToolMenuPage(page){
+            if(!toolMenuGroups[page])return;
+            toolMenuPage=page;rightMenuNeedsUpdate=true;syncDesktopToolButtons();
+        }
+        function updateRightMenuTexture(){
+            studioPanel(rightMenuCtx,512,600);
+            toolMenuTargets=[];
+            studioHeader(rightMenuCtx,'TOOL INDEX','X / TOOL SELECT');
+            [['mark','01 MARK'],['build','02 FORMS'],['edit','03 EDIT']].forEach(([page,label],i)=>{
+                toolMenuButton(20+i*160,56,152,50,label,toolMenuPage===page,()=>setToolMenuPage(page));
+            });
+            rightMenuCtx.fillStyle=studioPalette.muted;rightMenuCtx.font='700 12px Consolas,monospace';rightMenuCtx.textAlign='left';
+            rightMenuCtx.fillText(({mark:'STROKES / SURFACES / PAINT',build:'PRIMITIVES / SPATIAL GEOMETRY',edit:'SELECT / UNDO / RECENT'})[toolMenuPage],24,126);
+            if(toolMenuPage==='edit'){
+                toolMenuButton(26,149,460,66,'SELECT / TRANSFORM',activeTool==='select',()=>activateStudioTool('select'));
+                studioSection(rightMenuCtx,'UNDO / REDO',248);
+                toolMenuButton(26,270,219,62,`UNDO (${undoStack.length})`,false,()=>{performUndo();rightMenuNeedsUpdate=true;});
+                toolMenuButton(266,270,220,62,`REDO (${redoStack.length})`,false,()=>{performRedo();rightMenuNeedsUpdate=true;});
+                studioSection(rightMenuCtx,'ROTATION STEP',363);
+                [1,5,15].forEach((step,i)=>toolMenuButton(26+i*157,384,146,55,`${step}°`,rotationSnapStep===step,()=>setRotationSnapStep(step)));
+                studioSection(rightMenuCtx,'RECENT TOOLS',481);
+                recentToolIds.filter(id=>id!=='select').slice(0,3).forEach((id,i)=>{
+                    const t=studioTools.find(t=>t.id===id);
+                    toolMenuButton(26+i*157,505,146,44,(t?.name||id).toUpperCase(),activeTool===id,()=>activateStudioTool(id));
+                });
+            }else{
+                toolMenuGroups[toolMenuPage].forEach((id,i)=>{
+                    const t=studioTools.find(t=>t.id===id);
+                    const y=140+i*53;
+                    rightMenuCtx.fillStyle=studioPalette.muted;rightMenuCtx.font='700 11px Consolas,monospace';rightMenuCtx.textAlign='center';
+                    rightMenuCtx.fillText(String(i+1).padStart(2,'0'),29,y+25);
+                    toolMenuButton(55,y,426,46,t.name.toUpperCase(),activeTool===id,()=>activateStudioTool(id));
+                });
+                toolMenuButton(26,537,218,39,'QUICK: SELECT',activeTool==='select',()=>activateStudioTool('select'));
+                toolMenuButton(262,537,223,39,'RECENT / EDIT',false,()=>setToolMenuPage('edit'));
             }
+            rightMenuCtx.fillStyle=studioPalette.muted;rightMenuCtx.textAlign='center';rightMenuCtx.font='700 10px Consolas,monospace';
+            rightMenuCtx.fillText('A = TOOL OPTIONS   B = MATERIAL DECK',256,588);
             rightMenuTexture.needsUpdate=true;
         }
         updateRightMenuTexture();
-
-        function activateStudioTool(toolId) {
-            if (!studioTools.some(t => t.id === toolId)) return;
-            // Re-selecting the current tool retains v2.6 behavior: commit an active selection.
-            if (hasSelection) applySelection();
-            isPreviewingBox = isPreviewingSphere = isPreviewingPlane = isPreviewingTriangle = isPreviewingCylinder = isPreviewingTorus = isPreviewingIcosahedron = false;
-            hideAllPreviews();
-            bucketPreviewMesh.visible = linePreviewMesh.visible = false;
+        function activateStudioTool(toolId){
+            if(!studioTools.some(t=>t.id===toolId))return;
+            if(hasSelection)applySelection();
+            isPreviewingBox=isPreviewingSphere=isPreviewingPlane=isPreviewingTriangle=isPreviewingCylinder=isPreviewingTorus=isPreviewingIcosahedron=false;
+            hideAllPreviews();bucketPreviewMesh.visible=linePreviewMesh.visible=false;
             activeTool=toolId;
-            if(activeTool==='line' && lineDrawMode==='sheet') brushSize=1;
-            if((activeTool==='line'||activeTool==='paint') && brushShape==='ribbon') brushShape='cube';
-            updateCursors();
-            rightMenuNeedsUpdate=leftMenuNeedsUpdate=true;
-            syncDesktopToolButtons();
+            if(activeTool==='line'&&lineDrawMode==='sheet')brushSize=1;
+            if((activeTool==='line'||activeTool==='paint')&&brushShape==='ribbon')brushShape='cube';
+            toolMenuPage=Object.entries(toolMenuGroups).find(([_,ids])=>ids.includes(toolId))?.[0]||'mark';
+            recentToolIds.unshift(toolId);
+            for(let i=1;i<recentToolIds.length;){if(recentToolIds[i]===toolId)recentToolIds.splice(i,1);else i++;}
+            recentToolIds.length=Math.min(4,recentToolIds.length);
+            updateCursors();rightMenuNeedsUpdate=leftMenuNeedsUpdate=true;syncDesktopToolButtons();
         }
-        function handleRightMenuClick(cx, cy) {
-            if(cx>=50&&cx<=462&&cy>=44&&cy<44+14*39) {
-                const idx=Math.floor((cy-44)/39);
-                // Reject gaps between visual buttons rather than choosing the next row.
-                if(idx>=0&&idx<14&&(cy-44)%39<=34) activateStudioTool(studioTools[idx].id);
+        function handleRightMenuClick(cx,cy){
+            for(const target of toolMenuTargets){
+                if(cx>=target.x&&cx<=target.x+target.w&&cy>=target.y&&cy<=target.y+target.h){target.fn();return;}
             }
         }
 
 	const globalMenuCanvas = document.createElement('canvas'); globalMenuCanvas.width = 512; globalMenuCanvas.height = 1024;
-        const globalMenuCtx = globalMenuCanvas.getContext('2d', { willReadFrequently: true });
+        const globalMenuCtx = globalMenuCanvas.getContext('2d');
         const globalMenuTexture = new THREE.CanvasTexture(globalMenuCanvas);
         const globalMenuMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.30), new THREE.MeshBasicMaterial({ map: globalMenuTexture, transparent: true, side: THREE.DoubleSide }));
         globalMenuMesh.visible = false; globalMenuMesh.position.set(0, 0.22, -0.05); globalMenuMesh.rotation.x = -Math.PI / 4;
@@ -2707,6 +2701,12 @@ if (cy >= 60 && cy <= 90) {
 
         // --- In-VR File Management & Virtual Prompt State ---
         let globalMenuMode = 'main'; // 'main', 'save', 'load'
+        let workspacePage='operate';
+        let globalActionTargets=[];
+        function globalButton(x,y,w,h,label,active,oldX,oldY){
+            drawButton(globalMenuCtx,x,y,w,h,label,active);
+            globalActionTargets.push({x,y,w,h,oldX,oldY});
+        }
         let vrFileName = 'project_1';
         let vrSaveLocation = 'both'; // 'both' (VR Storage + PC Downloads), 'idb' (VR Storage Only), 'folder' (Linked PC Folder)
         let vrFileList = [];
@@ -2856,53 +2856,81 @@ if (cy >= 60 && cy <= 90) {
                 return;
             }
 
-            // Default: 'main' Global Settings Menu
-            studioHeader(globalMenuCtx,'Workspace','B · SETTINGS',studioPalette.lime);
-            drawButton(globalMenuCtx, 40, 70, 200, 50, `V-Lock: ${isVerticalLock ? 'ON' : 'OFF'}`, isVerticalLock);
-            drawButton(globalMenuCtx, 272, 70, 200, 50, `Clear Inside: ${clearInterior ? 'ON' : 'OFF'}`, clearInterior);
-            drawButton(globalMenuCtx, 40, 140, 138, 50, `MX: ${mirrorX ? 'ON' : 'OFF'}`, mirrorX);
-            drawButton(globalMenuCtx, 187, 140, 138, 50, `MY: ${mirrorY ? 'ON' : 'OFF'}`, mirrorY);
-            drawButton(globalMenuCtx, 334, 140, 138, 50, `MZ: ${mirrorZ ? 'ON' : 'OFF'}`, mirrorZ);
-            drawButton(globalMenuCtx, 40, 210, 50, 50, '-', false); drawButton(globalMenuCtx, 100, 210, 312, 50, `Polar Symmetry: ${polarSymmetry}`, polarSymmetry > 1); drawButton(globalMenuCtx, 422, 210, 50, 50, '+', false);
-            
-            drawButton(globalMenuCtx, 40, 270, 432, 45, `Draw From Center: ${drawFromCenter ? 'ON' : 'OFF'}`, drawFromCenter);
-            drawButton(globalMenuCtx, 40, 330, 140, 45, renderMode === 'performance' ? 'PERFORMANCE' : 'STANDARD', renderMode === 'performance');
-            drawButton(globalMenuCtx, 187, 330, 140, 45, `UNDO (${undoStack.length})`, false);
-            drawButton(globalMenuCtx, 334, 330, 140, 45, `REDO (${redoStack.length})`, false);
-
-            drawButton(globalMenuCtx, 40, 390, 200, 45, 'Export: BOXES', exportMode === 'boxes');
-            drawButton(globalMenuCtx, 272, 390, 200, 45, 'Export: MESH', exportMode === 'mesh');
-            drawButton(globalMenuCtx, 40, 450, 280, 50, 'EXPORT .OBJ', false);
-            drawButton(globalMenuCtx, 330, 450, 142, 50, 'EXIT VR', false);
-            drawButton(globalMenuCtx, 40, 510, 200, 45, 'SAVE .VTB', false);
-            drawButton(globalMenuCtx, 272, 510, 200, 45, 'LOAD .VTB', false);
-
-            studioSection(globalMenuCtx,'ARRAY · REPLICATE',595);
-            
-            drawButton(globalMenuCtx, 20, 615, 60, 45, `X:${gridCopyX ? 'ON' : 'OFF'}`, gridCopyX);
-            drawButton(globalMenuCtx, 85, 615, 35, 45, '<<', false); drawButton(globalMenuCtx, 125, 615, 25, 45, '<', false); drawButton(globalMenuCtx, 155, 615, 95, 45, `Spc: ${gridCopyXSpace}`, false); drawButton(globalMenuCtx, 255, 615, 25, 45, '>', false); drawButton(globalMenuCtx, 285, 615, 35, 45, '>>', false);
-            drawButton(globalMenuCtx, 330, 615, 30, 45, '-', false); drawButton(globalMenuCtx, 365, 615, 100, 45, `Num: ${gridCopyXCopies}`, false); drawButton(globalMenuCtx, 470, 615, 30, 45, '+', false);
-
-            drawButton(globalMenuCtx, 20, 675, 60, 45, `Y:${gridCopyY ? 'ON' : 'OFF'}`, gridCopyY);
-            drawButton(globalMenuCtx, 85, 675, 35, 45, '<<', false); drawButton(globalMenuCtx, 125, 675, 25, 45, '<', false); drawButton(globalMenuCtx, 155, 675, 95, 45, `Spc: ${gridCopyYSpace}`, false); drawButton(globalMenuCtx, 255, 675, 25, 45, '>', false); drawButton(globalMenuCtx, 285, 675, 35, 45, '>>', false);
-            drawButton(globalMenuCtx, 330, 675, 30, 45, '-', false); drawButton(globalMenuCtx, 365, 675, 100, 45, `Num: ${gridCopyYCopies}`, false); drawButton(globalMenuCtx, 470, 675, 30, 45, '+', false);
-
-            drawButton(globalMenuCtx, 20, 735, 60, 45, `Z:${gridCopyZ ? 'ON' : 'OFF'}`, gridCopyZ);
-            drawButton(globalMenuCtx, 85, 735, 35, 45, '<<', false); drawButton(globalMenuCtx, 125, 735, 25, 45, '<', false); drawButton(globalMenuCtx, 155, 735, 95, 45, `Spc: ${gridCopyZSpace}`, false); drawButton(globalMenuCtx, 255, 735, 25, 45, '>', false); drawButton(globalMenuCtx, 285, 735, 35, 45, '>>', false);
-            drawButton(globalMenuCtx, 330, 735, 30, 45, '-', false); drawButton(globalMenuCtx, 365, 735, 100, 45, `Num: ${gridCopyZCopies}`, false); drawButton(globalMenuCtx, 470, 735, 30, 45, '+', false);
-
-            studioSection(globalMenuCtx,'ROTATION · PRECISION',824);
-            globalMenuCtx.fillStyle=studioPalette.muted;globalMenuCtx.font='14px system-ui,sans-serif';globalMenuCtx.textAlign='center';
-            globalMenuCtx.fillText('Selection + copy rotation · snap / nudge angle',256,855);
-            drawButton(globalMenuCtx,40,874,132,56,'1° FINE',rotationSnapStep===1);
-            drawButton(globalMenuCtx,190,874,132,56,'5°',rotationSnapStep===5);
-            drawButton(globalMenuCtx,340,874,132,56,'15°',rotationSnapStep===15);
-            globalMenuCtx.fillStyle=studioPalette.muted;globalMenuCtx.font='12px system-ui,sans-serif';globalMenuCtx.textAlign='center';
-            globalMenuCtx.fillText('Change snap here, then use X · SELECT to rotate.',256,957);
-            if(vrStatusMsg) {
-                globalMenuCtx.fillStyle=studioPalette.lime;globalMenuCtx.font='700 17px system-ui,sans-serif';
-                globalMenuCtx.fillText(vrStatusMsg,256,984,475);
+            // Four focused pages. Each button dispatches into the untouched original handler.
+            globalActionTargets=[];
+            studioHeader(globalMenuCtx,'SYSTEM DECK','Y / WORKSPACE',studioPalette.lime);
+            [['operate','01 STUDIO'],['mirror','02 SYMM'],['array','03 ARRAY'],['files','04 FILES']].forEach(([page,label],i)=>{
+                const x=17+i*124;
+                drawButton(globalMenuCtx,x,62,115,58,label,page===workspacePage);
+                globalActionTargets.push({x,y:62,w:115,h:58,tab:page});
+            });
+            function hint(t,y){globalMenuCtx.textAlign='left';globalMenuCtx.fillStyle=studioPalette.muted;globalMenuCtx.font='700 14px Consolas,monospace';globalMenuCtx.fillText(t,28,y,460);}
+            if(workspacePage==='operate'){
+                studioSection(globalMenuCtx,'CURRENT PROJECT',175);
+                hint(`TOOL / ${(studioTools.find(t=>t.id===activeTool)?.name||activeTool).toUpperCase()}`,221);
+                hint(`${totalActiveVoxels.toLocaleString()} VOXELS  ·  ${chunks.size.toLocaleString()} CHUNKS`,253);
+                studioSection(globalMenuCtx,'HISTORY',318);
+                globalButton(28,351,219,72,`UNDO (${undoStack.length})`,false,250,350);
+                globalButton(265,351,219,72,`REDO (${redoStack.length})`,false,400,350);
+                studioSection(globalMenuCtx,'RENDER DISPLAY',480);
+                globalButton(28,508,456,75,renderMode==='performance'?'POINTS / SWITCH TO SOLID':'SOLID / SWITCH TO POINTS',renderMode==='performance',100,350);
+                hint('POINTS MODE HELPS WITH LARGE SCULPTS',622);
+                studioSection(globalMenuCtx,'ROTATION INCREMENTS',687);
+                globalButton(28,718,143,75,'1° FINE',rotationSnapStep===1,100,900);
+                globalButton(184,718,143,75,'5° MED',rotationSnapStep===5,230,900);
+                globalButton(340,718,144,75,'15° WIDE',rotationSnapStep===15,400,900);
+                hint('A / SELECT HAS +/- PER AXIS',833);
+                globalButton(28,855,219,78,'SAVE .VTB',false,100,535);
+                globalButton(265,855,219,78,'LOAD .VTB',false,350,535);
+            }else if(workspacePage==='mirror'){
+                studioSection(globalMenuCtx,'DRAW CONSTRAINTS',175);
+                globalButton(28,208,219,70,`VERTICAL: ${isVerticalLock?'ON':'OFF'}`,isVerticalLock,100,100);
+                globalButton(265,208,219,70,`CLEAR INSIDE: ${clearInterior?'ON':'OFF'}`,clearInterior,350,100);
+                studioSection(globalMenuCtx,'MIRROR AXES',331);
+                globalButton(28,365,143,73,`X: ${mirrorX?'ON':'OFF'}`,mirrorX,100,160);
+                globalButton(184,365,143,73,`Y: ${mirrorY?'ON':'OFF'}`,mirrorY,250,160);
+                globalButton(340,365,144,73,`Z: ${mirrorZ?'ON':'OFF'}`,mirrorZ,400,160);
+                studioSection(globalMenuCtx,'POLAR SYMMETRY',508);
+                globalButton(28,536,94,72,'- 1',false,70,235);
+                globalButton(136,536,241,72,`POLAR: ${polarSymmetry} / TOGGLE`,polarSymmetry>1,200,235);
+                globalButton(391,536,93,72,'+ 1',false,450,235);
+                hint('COMBINE MIRROR / POLAR / GRID ARRAYS',659);
+                studioSection(globalMenuCtx,'ORIGIN CONTROL',719);
+                globalButton(28,752,456,79,`DRAW FROM CENTER: ${drawFromCenter?'ON':'OFF'}`,drawFromCenter,150,290);
+                hint('THESE SETTINGS APPLY TO ALL TOOL TYPES.',865);
+            }else if(workspacePage==='array'){
+                studioSection(globalMenuCtx,'REPEATED GRID ARRAYS',174);
+                hint('STEP VALUES ARE VOXELS.',204);
+                [['X',gridCopyX,gridCopyXSpace,gridCopyXCopies,638],['Y',gridCopyY,gridCopyYSpace,gridCopyYCopies,698],['Z',gridCopyZ,gridCopyZSpace,gridCopyZCopies,758]].forEach(([axis,enabled,space,copies,oldY],i)=>{
+                    const y=234+i*224;
+                    globalButton(28,y,456,54,`ARRAY ${axis}: ${enabled?'ON':'OFF'}`,enabled,50,oldY);
+                    globalMenuCtx.textAlign='left';globalMenuCtx.fillStyle=studioPalette.muted;globalMenuCtx.font='700 12px Consolas,monospace';globalMenuCtx.fillText('SPACING',29,y+79);
+                    globalButton(28,y+90,70,47,'-16',false,100,oldY);
+                    globalButton(105,y+90,68,47,'-1',false,138,oldY);
+                    globalButton(181,y+90,150,47,`${space} VOX`,false,200,oldY);
+                    globalButton(338,y+90,68,47,'+1',false,270,oldY);
+                    globalButton(413,y+90,71,47,'+16',false,305,oldY);
+                    globalButton(28,y+148,91,46,'- COPY',false,345,oldY);
+                    globalButton(127,y+148,257,46,`REPEATS: ${copies}`,false,390,oldY);
+                    globalButton(392,y+148,92,46,'+ COPY',false,485,oldY);
+                });
+                hint('ARRAYS CAN RUN ON MORE THAN ONE AXIS.',969);
+            }else if(workspacePage==='files'){
+                studioSection(globalMenuCtx,'SAVE / LOAD',174);
+                globalButton(28,211,219,86,'SAVE .VTB',false,100,535);
+                globalButton(265,211,219,86,'LOAD .VTB',false,350,535);
+                hint('LINK PC FOLDER BEFORE ENTERING VR.',340);
+                studioSection(globalMenuCtx,'OBJ EXPORT',412);
+                globalButton(28,444,219,74,'BOXES',exportMode==='boxes',100,410);
+                globalButton(265,444,219,74,'MESH',exportMode==='mesh',350,410);
+                globalButton(28,548,456,90,'EXPORT .OBJ',false,100,475);
+                studioSection(globalMenuCtx,'SESSION',730);
+                globalButton(28,762,456,88,'EXIT VR',false,400,475);
+                hint('STANDARD .VTB FORMAT / UNCHANGED.',923);
             }
+            globalMenuCtx.textAlign='center';globalMenuCtx.font='700 13px Consolas,monospace';globalMenuCtx.fillStyle=studioPalette.lime;
+            globalMenuCtx.fillText('X: TOOL INDEX   B: MATERIALS   A: OPTIONS',256,988,460);
+            if(vrStatusMsg){globalMenuCtx.fillStyle='#ffd08b';globalMenuCtx.fillText(vrStatusMsg,256,964,460);}
             globalMenuTexture.needsUpdate=true;
         }
 
@@ -2989,6 +3017,11 @@ if (cy >= 60 && cy <= 90) {
                 return;
             }
 
+            const target=globalActionTargets.find(t=>cx>=t.x&&cx<=t.x+t.w&&cy>=t.y&&cy<=t.y+t.h);
+            if(!target)return;
+            if(target.tab){workspacePage=target.tab;globalMenuNeedsUpdate=true;return;}
+            // Dispatch into preserved settings behavior, including saving, symmetry and array operations.
+            cx=target.oldX;cy=target.oldY;
             if(cy>=874&&cy<=930) {
                 if(cx>=40&&cx<=172) setRotationSnapStep(1);
                 else if(cx>=190&&cx<=322) setRotationSnapStep(5);
@@ -6992,8 +7025,13 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
             
             if (anyJoyActive) {
                 joyColorActiveTimer = Date.now() + 1500; // Keep UI active for 1.5 seconds after stopping
+                const indicatorWasHidden = !joyColorMesh.visible;
                 joyColorMesh.visible = true;
-                updateJoyColorTexture();
+                const uiNow = performance.now();
+                if(indicatorWasHidden || uiNow-lastJoyTextureUpdateTime>=75){
+                    updateJoyColorTexture();
+                    lastJoyTextureUpdateTime=uiNow;
+                }
             } else if (joyColorMesh.visible && Date.now() > joyColorActiveTimer) {
                 joyColorMesh.visible = false;
             }
@@ -7006,7 +7044,7 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
         
         renderer.setAnimationLoop(() => {
             const hudTime=performance.now();
-            if(hudTime-hudTick>900) {hudTick=hudTime;updateStudioHUD();}
+            if(hudTime-hudTick>1500) {hudTick=hudTime;updateStudioHUD();}
             shiftProgress += 0.005 * shiftDir; if(shiftProgress>=1)shiftDir=-1; if(shiftProgress<=0)shiftDir=1;
             if (renderer.xr.isPresenting) {
                 const session = renderer.xr.getSession(); if(session) for(let i=0;i<session.inputSources.length;i++){ const s=session.inputSources[i]; if(s){ const c=i===0?controller0:controller1, g=i===0?grip0:grip1; if(s.handedness==='right'&&xrRight!==c){ xrRight=c; gripRight=g; xrRight.add(rightLaserLine, rightMenuMesh, globalMenuMesh, joyColorMesh); } else if(s.handedness==='left'&&xrLeft!==c){ xrLeft=c; gripLeft=g; xrLeft.add(leftLaserLine, leftMenuMesh, colorMenuMesh); } } }
@@ -7607,22 +7645,30 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
 
         refreshVRFileList();
 
-        // The desktop drawer is a companion to VR menus, not a replacement for their parameters.
+        // Desktop companion uses the exact same tool groups as the X-menu; settings stay in VR.
         const toolTray=document.getElementById('tools-drawer');
         const toolList=document.getElementById('desktop-tool-list');
         const toolLookup=new Map();
-        function syncDesktopToolButtons() {
-            for(const [tool,btn] of toolLookup){const active=activeTool===tool;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));}
+        function syncDesktopToolButtons(){
+            document.querySelectorAll('#desktop-tool-tabs button').forEach(btn=>{
+                const active=btn.dataset.toolPage===toolMenuPage;
+                btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));
+            });
+            for(const [tool,btn] of toolLookup){
+                const visible=toolMenuPage==='edit'?(tool==='select'||recentToolIds.includes(tool)):toolMenuGroups[toolMenuPage].includes(tool);
+                btn.hidden=!visible;
+                const active=activeTool===tool;
+                btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));
+            }
             const label=document.getElementById('hud-current-tool');
-            if(label) label.textContent=(studioTools.find(t=>t.id===activeTool)?.name||activeTool).toUpperCase();
+            if(label)label.textContent=(studioTools.find(t=>t.id===activeTool)?.name||activeTool).toUpperCase();
         }
-        for(const tool of studioTools) {
-            const btn=document.createElement('button');btn.className='tool-tile';btn.type='button';
-            btn.textContent=tool.name;
+        for(const tool of studioTools){
+            const btn=document.createElement('button');btn.className='tool-tile';btn.type='button';btn.textContent=tool.name;
             const kind=document.createElement('small');kind.textContent=tool.kind;btn.appendChild(kind);
-            btn.addEventListener('click',()=>activateStudioTool(tool.id));
-            toolList.appendChild(btn);toolLookup.set(tool.id,btn);
+            btn.addEventListener('click',()=>activateStudioTool(tool.id));toolList.appendChild(btn);toolLookup.set(tool.id,btn);
         }
+        document.querySelectorAll('#desktop-tool-tabs button').forEach(btn=>btn.addEventListener('click',()=>setToolMenuPage(btn.dataset.toolPage)));
         syncDesktopToolButtons();
         document.getElementById('tool-drawer-toggle').addEventListener('click',()=>{toolTray.hidden=!toolTray.hidden;});
         document.getElementById('close-tool-drawer').addEventListener('click',()=>{toolTray.hidden=true;});
