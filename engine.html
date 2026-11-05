@@ -8,114 +8,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo By: Rob Reynolds</title>
+    <title>VoxTrotBravo — Spatial Studio v3.0 · Rob Reynolds</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #111;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        #ui-container {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            color: #fff;
-            pointer-events: none;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px 30px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.2);
-            z-index: 100;
-        }
-        h1 { margin: 0 0 10px 0; font-size: 24px; color: #4facfe; }
-        p { margin: 5px 0; font-size: 14px; color: #ddd; }
-
-        /* Copyright UI Tag */
-        .copyright-tag {
-            font-size: 10px;
-            opacity: 0.5;
-            margin-top: 12px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 8px;
-        }
-
-        /* Browser File & Export Controls Bar Styling */
-        #file-controls-overlay {
-            position: absolute;
-            bottom: 85px; /* Positioned just above the standard WebXR button */
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-            z-index: 1001;
-            pointer-events: auto;
-        }
-        .overlay-action-btn {
-            padding: 12px 20px;
-            background: #4facfe;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            white-space: nowrap;
-        }
-        .overlay-action-btn:hover {
-            background: #0088ff;
-            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
-            transform: translateY(-2px);
-        }
-        .overlay-action-btn:active {
-            transform: translateY(0);
-        }
-        #save-button-overlay {
-            background: #00b894;
-        }
-        #save-button-overlay:hover {
-            background: #00a383;
-            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
-        }
-        #load-button-overlay {
-            background: #6c5ce7;
-        }
-        #load-button-overlay:hover {
-            background: #5b4bc4;
-            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
-        }
-        #folder-button-overlay {
-            background: #e17055;
-        }
-        #folder-button-overlay:hover {
-            background: #d65f42;
-            box-shadow: 0 6px 20px rgba(225, 112, 85, 0.4);
-        }
-        
-        /* Loading Overlay Styles */
-
-        #loading-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; color: #4facfe;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            z-index: 1000; font-family: 'Segoe UI', sans-serif;
-            transition: opacity 0.5s ease;
-        }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 4px solid rgba(79, 172, 254, 0.3);
-            border-top: 4px solid #4facfe;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-top: 20px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        :root { color-scheme: dark; --ink: #dfeaf3; --muted: #91a9ba; --accent: #52ddde; --accent2: #a4f7bb; --surface: rgba(13,21,31,.91); --line: rgba(147,196,215,.19); }
+        * { box-sizing: border-box; }
+        body { margin:0; overflow:hidden; background:#080d15; color:var(--ink); font-family:Inter,'Segoe UI',system-ui,sans-serif; }
+        canvas { display:block; }
+        button { font:inherit; }
+        .glass-surface { background:var(--surface); border:1px solid var(--line); box-shadow:0 18px 48px rgba(0,0,0,.28); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+        #ui-container { position:absolute; top:18px; left:18px; width:310px; border-radius:17px; z-index:100; pointer-events:auto; overflow:hidden; }
+        .brand-head { display:flex; align-items:center; justify-content:space-between; padding:16px 17px 12px; border-bottom:1px solid var(--line); }
+        .brand-logo { display:flex; align-items:center; gap:11px; }
+        .brand-mark { width:39px; height:39px; border:1px solid #52ddde; border-radius:12px; display:grid; place-items:center; font-size:21px; font-weight:800; letter-spacing:-2px; color:var(--accent); background:linear-gradient(140deg,rgba(82,221,222,.17),rgba(82,221,222,.035)); }
+        .brand-head h1 { margin:0; font-size:16px; letter-spacing:.03em; font-weight:750; }
+        .brand-head small { font-size:10px; letter-spacing:.2em; color:var(--muted); }
+        .icon-btn { cursor:pointer; display:grid; place-items:center; width:34px; height:34px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--ink); }
+        .icon-btn:hover,.icon-btn:focus-visible { background:rgba(82,221,222,.18); border-color:var(--accent); }
+        .ui-content { padding:14px 17px 16px; }
+        .eyebrow { color:var(--accent); text-transform:uppercase; font-weight:750; font-size:10px; letter-spacing:.2em; }
+        .head-sub { margin:5px 0 13px; font-size:12px; line-height:1.6; color:var(--muted); }
+        .command-rows { display:grid; gap:8px; }
+        .command { display:grid; grid-template-columns:62px 1fr; align-items:start; gap:9px; font-size:11px; color:var(--muted); line-height:1.42; }
+        .command b { display:block; border:1px solid #2b4351; border-radius:6px; padding:5px 3px; color:#cbf0f0; background:#152633; text-align:center; font-size:10px; white-space:nowrap; }
+        .shortcut-foot { font-size:10px; border-top:1px solid var(--line); margin-top:13px; padding-top:10px; color:var(--muted); line-height:1.6; }
+        .shortcut-foot strong { color:#b3ffcd; }
+        #ui-container.compact .ui-content { display:none; }
+        #workspace-status { position:absolute; top:18px; right:18px; padding:12px 16px; min-width:218px; border-radius:14px; z-index:95; pointer-events:none; }
+        .status-heading { display:flex; justify-content:space-between; gap:20px; font-size:10px; letter-spacing:.14em; color:var(--muted); }
+        .status-heading span:last-child { color:var(--accent2); }
+        .status-value { font-size:25px; font-weight:750; line-height:1.22; font-variant-numeric:tabular-nums; margin:4px 0 2px; }
+        .status-detail { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; }
+        #tools-drawer { position:absolute; top:90px; right:18px; width:285px; max-height:calc(100vh - 210px); overflow:auto; padding:15px; border-radius:14px; z-index:101; }
+        #tools-drawer[hidden] { display:none; }
+        .drawer-head { display:flex; justify-content:space-between; align-items:center; margin:0 0 12px; }
+        .drawer-head h2 { font-size:14px; margin:0; letter-spacing:.07em; }
+        #desktop-tool-list { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+        .tool-tile { text-align:left; border:1px solid var(--line); background:#132332; color:var(--ink); border-radius:9px; padding:9px 8px; font-size:11px; cursor:pointer; min-height:39px; }
+        .tool-tile:hover { border-color:#81dbe4; background:#1d3a47; }
+        .tool-tile.active { border-color:var(--accent); color:#d7ffff; background:#1e4850; }
+        .tool-tile small { display:block; color:var(--muted); font-size:9px; margin-top:2px; }
+        .drawer-note { font-size:11px; line-height:1.5; color:var(--muted); margin:13px 0 0; }
+        .section-label { font-size:10px; font-weight:700; letter-spacing:.14em; color:var(--accent); margin:14px 0 8px; text-transform:uppercase; }
+        .snap-control { display:flex; gap:6px; }
+        .snap-control button { cursor:pointer; border:1px solid var(--line); border-radius:8px; background:#152633; color:var(--ink); flex:1; padding:8px 5px; }
+        .snap-control button.active { background:#1e5055; border-color:var(--accent); color:white; }
+        #file-controls-overlay { position:absolute; bottom:82px; left:50%; transform:translateX(-50%); display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:7px; max-width:calc(100vw - 24px); padding:8px; border-radius:16px; z-index:1001; pointer-events:auto; }
+        .overlay-action-btn { cursor:pointer; border:1px solid var(--line); border-radius:10px; background:#1d303f; color:var(--ink); font-size:12px; letter-spacing:.015em; font-weight:700; padding:11px 15px; transition:background .12s, border-color .12s; white-space:nowrap; }
+        .overlay-action-btn:hover,.overlay-action-btn:focus-visible { background:#315767; border-color:var(--accent); }
+        #save-button-overlay { background:#215749; border-color:#4b9e86; }
+        #load-button-overlay { background:#28385b; border-color:#586d9d; }
+        #folder-button-overlay { background:#4d3b30; border-color:#8d6b51; }
+        #tool-drawer-toggle { border-color:#5691a0; background:#183c47; }
+        .dock-mark { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.15em; padding:0 6px; white-space:nowrap; }
+        #loading-overlay { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 40%,#142b35 0%,#080f18 62%); color:var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10000; transition:opacity .4s; }
+        #loading-overlay h2 { font-size:27px; margin:0; letter-spacing:.06em; }
+        #loading-overlay p { font-size:12px; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; }
+        .spinner { width:40px; height:40px; border:3px solid #2d4855; border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin-top:20px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @media(max-width:760px) { #ui-container { top:9px; left:9px; width:245px; } .brand-head { padding:10px; } .brand-head h1 { font-size:13px; } .ui-content { padding:10px; } #workspace-status { top:9px; right:9px; padding:9px; min-width:143px; } .status-value { font-size:19px; } #tools-drawer { top:80px; right:9px; max-height:60vh; } #file-controls-overlay { width:calc(100vw - 18px); bottom:74px; } .overlay-action-btn { padding:9px 10px; font-size:11px; } .dock-mark { display:none; } }
     </style>
     <script type="importmap">
         {
@@ -129,26 +79,34 @@
 <body>
     <div id="loading-overlay">
         <h2>VoxTrotBravo PCVR</h2>
-        <p>Initializing Optimized WebXR Engine...</p>
+        <p>Initializing the spatial workspace…</p>
         <div class="spinner"></div>
     </div>
 
-    <div id="ui-container">
-        <h1>VoxTrotBravo PCVR v2.6</h1>
-        <p><b>Right Trigger:</b> Draw / Select / Sliders | <b>Left Trigger:</b> Erase / Drop Selection</p>
-        <p><b>Grips:</b> Grab to Move, Scale & Rotate World</p>
-        <p><b>A & B (Right):</b> Tools & Settings | <b>X & Y (Left):</b> Tool Options & Materials</p>
-        <p style="color: #00ffcc;"><b>Joysticks:</b> Shift Colors — Assignable in the Color Menu (B-Button)</p>
-        <div class="copyright-tag">&copy; 2024-2026 Rob Reynolds. All Rights Reserved.</div>
-    </div>
-
-
-    <div id="file-controls-overlay">
+    <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark">V</div><div><small>VOXTROTBRAVO</small><h1>Spatial Studio <span style="color:#52ddde">3.0</span></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="ui-content"><div class="eyebrow">Controller quick guide</div><p class="head-sub">Sculpt in space. All original tools and controls are retained in the VR wrist menus.</p>
+            <div class="command-rows">
+                <div class="command"><b>A · Right</b><span>Tool library · 14 tools</span></div>
+                <div class="command"><b>B · Right</b><span>Workspace · symmetry · files · rotation snap</span></div>
+                <div class="command"><b>X · Left</b><span>Active tool parameters and selection transforms</span></div>
+                <div class="command"><b>Y · Left</b><span>Materials, colors and textures</span></div>
+                <div class="command"><b>Triggers</b><span>Right to draw/select · left to erase/drop</span></div>
+                <div class="command"><b>Grips</b><span>Move, scale and rotate the world</span></div>
+            </div>
+            <div class="shortcut-foot"><strong>Precision:</strong> Rotate with 1°, 5°, or 15° snapping. Tap ± on each rotation axis for exact nudges.<br>© 2024–2026 Rob Reynolds. All rights reserved.</div>
+        </div>
+    </section>
+    <section id="workspace-status" class="glass-surface" aria-label="Project statistics"><div class="status-heading"><span>LIVE WORKSPACE</span><span id="hud-current-tool">BRUSH</span></div><div class="status-value" id="hud-voxels">0</div><div class="status-detail"><span>VOXELS</span><span id="hud-perf">READY</span></div></section>
+    <aside id="tools-drawer" class="glass-surface" hidden aria-label="Desktop tool library"><div class="drawer-head"><h2>Tool library</h2><button id="close-tool-drawer" class="icon-btn" aria-label="Close tool library">×</button></div><div id="desktop-tool-list"></div><p class="drawer-note">Tool parameters remain available on the left VR wrist menu (X). Select a tool here before entering VR or while the headset session is active.</p><div class="section-label">Rotation snapping</div><div id="desktop-snap-controls" class="snap-control"><button data-rot-snap="1" class="active">1°</button><button data-rot-snap="5">5°</button><button data-rot-snap="15">15°</button></div></aside>
+    <div id="file-controls-overlay" class="glass-surface" role="toolbar" aria-label="Project file controls">
+        <span class="dock-mark">PROJECT</span>
         <button id="save-button-overlay" class="overlay-action-btn">Save .VTB</button>
-        <button id="load-button-overlay" class="overlay-action-btn">Load .VTB</button>
-        <button id="folder-button-overlay" class="overlay-action-btn" title="Optional: Grant folder access before entering VR to read/write .VTB files directly to a PC folder while in VR">Link VR Folder</button>
-        <button id="export-button-overlay" class="overlay-action-btn">Export .OBJ (Current Mode)</button>
-        <input type="file" id="vtb-file-input" accept=".vtb" style="display: none;" />
+        <button id="load-button-overlay" class="overlay-action-btn">Open .VTB</button>
+        <button id="folder-button-overlay" class="overlay-action-btn" title="Grant folder access before entering VR to read/write project files directly">Link folder</button>
+        <button id="export-button-overlay" class="overlay-action-btn">Export .OBJ</button>
+        <button id="tool-drawer-toggle" class="overlay-action-btn" title="Open desktop tool library">Tools / snap</button>
+        <input type="file" id="vtb-file-input" accept=".vtb" style="display:none" />
     </div>
 
     <script type="module">
@@ -219,6 +177,33 @@
         let currentStrokeVoxelTracker = null;
         const tempHistoryColor = new THREE.Color(); // Used purely for execution to avoid loop allocations
         
+        const studioTools = [
+            {id:'brush',name:'Brush',kind:'Sculpt'},
+            {id:'extrude',name:'Extrude',kind:'Sculpt'},
+            {id:'line',name:'Line / Arc',kind:'Draw'},
+            {id:'paint',name:'Paint',kind:'Color'},
+            {id:'sculpt',name:'Soft Sculpt',kind:'Sculpt'},
+            {id:'plane',name:'Plane',kind:'Shape'},
+            {id:'box',name:'Box',kind:'Shape'},
+            {id:'quadsphere',name:'Quad Sphere',kind:'Shape'},
+            {id:'cylinder',name:'Cylinder',kind:'Shape'},
+            {id:'triangle',name:'Cone / Pyramid',kind:'Shape'},
+            {id:'icosahedron',name:'Platonic',kind:'Shape'},
+            {id:'select',name:'Select / Transform',kind:'Edit'},
+            {id:'bouncy',name:'Particle Brush',kind:'Draw'},
+            {id:'torus',name:'Torus / Arch',kind:'Shape'}
+        ];
+        let rotationSnapStep = 1; // 1°, 5°, 15°: applies to selection and copy-step rotation.
+        function setRotationSnapStep(step) {
+            if (![1,5,15].includes(step)) return;
+            rotationSnapStep = step;
+            leftMenuNeedsUpdate = globalMenuNeedsUpdate = true;
+            document.querySelectorAll('[data-rot-snap]').forEach(b => {
+                const active = Number(b.dataset.rotSnap) === step;
+                b.classList.toggle('active',active);
+                b.setAttribute('aria-pressed',String(active));
+            });
+        }
         let activeTool = 'brush'; 
         let extrudeAxis = 'free';
         let extrudeAdjoining = false;
@@ -1827,23 +1812,70 @@ function updatePlanePreview(start, end, isPainting) {
         const rightLaserLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
         rightLaserLine.scale.z = 5; rightLaserLine.visible = false; xrRight.add(rightLaserLine);
 
+        // Spatial Studio controller panels. All drawing uses the original interaction coordinates.
+        const studioPalette = { bg:'#09141e', surface:'#122733', surface2:'#19323f', border:'#345262', line:'#28434f', ink:'#dcebf4', muted:'#8bafbd', cyan:'#59e4df', lime:'#b7f2a0', soft:'#d5fdf6' };
+        function studioRound(ctx, x, y, w, h, radius=10) {
+            ctx.beginPath();
+            ctx.roundRect(x+0.5,y+0.5,Math.max(0,w-1),Math.max(0,h-1),Math.min(radius,w/2,h/2));
+        }
+        function studioPanel(ctx, width, height, accent=studioPalette.cyan) {
+            ctx.clearRect(0,0,width,height);
+            const grad=ctx.createLinearGradient(0,0,width,height);
+            grad.addColorStop(0,'#112733'); grad.addColorStop(.47,'#091720'); grad.addColorStop(1,'#08111c');
+            ctx.fillStyle=grad;ctx.fillRect(0,0,width,height);
+            ctx.fillStyle='rgba(75,149,167,.055)';
+            for (let x=20;x<width;x+=32) ctx.fillRect(x,0,1,height);
+            for (let y=20;y<height;y+=32) ctx.fillRect(0,y,width,1);
+            ctx.fillStyle=accent;ctx.fillRect(0,0,5,height);
+            ctx.fillStyle='rgba(255,255,255,.04)';ctx.fillRect(5,0,width-5,42);
+            ctx.strokeStyle='rgba(132,205,220,.30)';ctx.lineWidth=2;ctx.strokeRect(1,1,width-2,height-2);
+            ctx.fillStyle='rgba(172,220,230,.08)';ctx.fillRect(18,41,width-36,1);
+        }
+        function studioHeader(ctx, title, tag, accent=studioPalette.cyan) {
+            ctx.textBaseline='middle';ctx.textAlign='left';ctx.fillStyle=studioPalette.ink;
+            ctx.font='700 21px system-ui,sans-serif';ctx.fillText(title,22,22,300);
+            ctx.textAlign='right';ctx.font='700 11px system-ui,sans-serif';ctx.fillStyle=accent;ctx.fillText(tag.toUpperCase(),493,23,170);
+        }
+        function studioSection(ctx,label,y,width=470) {
+            ctx.textBaseline='middle';ctx.textAlign='left';ctx.font='700 13px system-ui,sans-serif';
+            ctx.fillStyle=studioPalette.muted;ctx.fillText(label.toUpperCase(),25,y);
+            ctx.strokeStyle='rgba(139,175,189,.22)';ctx.lineWidth=1;
+            const start=Math.min(480,50+label.length*8);ctx.beginPath();ctx.moveTo(start,y);ctx.lineTo(492,y);ctx.stroke();
+        }
         function drawButton(ctx, x, y, w, h, text, isActive) {
-            ctx.fillStyle = isActive ? '#4facfe' : '#333'; ctx.fillRect(x, y, w, h);
-            ctx.strokeStyle = isActive ? '#fff' : '#888'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + w/2, y + h/2, w - 6);
+            const active=Boolean(isActive);
+            studioRound(ctx,x,y,w,h,Math.min(10,h*.23));
+            ctx.fillStyle=active?'#245d61':(w<48?'#1b3643':'#152d3a');ctx.fill();
+            ctx.strokeStyle=active?'#69e9e2':'#3c5866';ctx.lineWidth=active?2:1.2;ctx.stroke();
+            if(active){ctx.fillStyle='#6ff7e9';studioRound(ctx,x+4,y+4,3,h-8,2);ctx.fill();}
+            const len=String(text).length;
+            let size=h<28?12:h<34?13:h<43?15:17;
+            if(w<65) size=Math.min(size,16);
+            if(w<44) size=Math.min(size,14);
+            if(len>18) size=Math.min(size,14);
+            if(len>26) size=Math.min(size,12);
+            ctx.fillStyle=active?'#ecffff':'#d7e7f0';ctx.font=`700 ${size}px system-ui,sans-serif`;
+            ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(text),x+w/2,y+h/2,w-8);
         }
-
-        function drawSlider(ctx, x, y, w, h, label, val, min, max, format = '') {
-            ctx.fillStyle = '#333'; ctx.fillRect(x, y, w, h);
-            const pct = Math.max(0, Math.min(1, (val - min) / (max - min)));
-            ctx.fillStyle = '#4facfe'; ctx.fillRect(x, y, w * pct, h);
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; 
-            const displayVal = Number.isInteger(val) ? val : Number(val.toFixed(2));
-            const displayStr = format ? format.replace('%v', displayVal) : `${label}: ${displayVal}°`;
-            ctx.fillText(displayStr, x + w/2, y + h/2);
+        function drawSlider(ctx, x, y, w, h, label, val, min, max, format='') {
+            const pct=Math.max(0,Math.min(1,(val-min)/(max-min)));
+            studioRound(ctx,x,y,w,h,8);ctx.fillStyle='#132c38';ctx.fill();
+            ctx.save();studioRound(ctx,x,y,w,h,8);ctx.clip();
+            ctx.fillStyle='#2d6770';ctx.fillRect(x,y,Math.max(2,w*pct),h);
+            ctx.fillStyle='rgba(200,255,250,.11)';ctx.fillRect(x+w*pct-2,y,3,h);
+            ctx.restore();
+            studioRound(ctx,x,y,w,h,8);ctx.strokeStyle='#456878';ctx.lineWidth=1.5;ctx.stroke();
+            const displayVal=Number.isInteger(val)?val:Number(val.toFixed(2));
+            const caption=format?format.replace('%v',displayVal):`${label}: ${displayVal}°`;
+            ctx.fillStyle='#effaff';ctx.font=`700 ${h<34?14:16}px system-ui,sans-serif`;
+            ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(caption,x+w/2,y+h/2,w-12);
         }
-
+        // Fine rotation: 1/5/15° slider snap plus exact +/- nudge buttons.
+        function drawRotationControl(ctx, y, label, value) {
+            drawButton(ctx,50,y,40,30,'−',false);
+            drawSlider(ctx,93,y,326,30,label,value,-180,180);
+            drawButton(ctx,422,y,40,30,'+',false);
+        }
         const leftMenuCanvas = document.createElement('canvas'); leftMenuCanvas.width = 512; leftMenuCanvas.height = 512;
         const leftMenuCtx = leftMenuCanvas.getContext('2d', { willReadFrequently: true });
         const leftMenuTexture = new THREE.CanvasTexture(leftMenuCanvas);
@@ -1852,9 +1884,11 @@ function updatePlanePreview(start, end, isPainting) {
         xrLeft.add(leftMenuMesh);
 
         function updateLeftMenuTexture() {
-            leftMenuCtx.fillStyle = 'rgba(20, 20, 20, 0.95)'; leftMenuCtx.fillRect(0, 0, 512, 512);
-            leftMenuCtx.fillStyle = '#4facfe'; leftMenuCtx.font = 'bold 22px sans-serif'; leftMenuCtx.textAlign = 'center';
-            leftMenuCtx.fillText(`Tool Options | Blocks: ${totalActiveVoxels.toLocaleString()}`, 256, 30);
+            studioPanel(leftMenuCtx,512,512);
+            const activeInfo=studioTools.find(item=>item.id===activeTool);
+            studioHeader(leftMenuCtx,activeInfo?.name || activeTool,`${(activeInfo?.kind||'Tool').toUpperCase()} · ${totalActiveVoxels.toLocaleString()} VXL`);
+            leftMenuCtx.fillStyle=studioPalette.muted;leftMenuCtx.textAlign='center';leftMenuCtx.font='11px system-ui,sans-serif';
+            leftMenuCtx.fillText('X · PARAMETER PANEL',256,503);
         if (activeTool === 'brush') {
             drawButton(leftMenuCtx, 50, 70, 130, 50, 'CUBE', brushShape === 'cube'); 
             drawButton(leftMenuCtx, 190, 70, 130, 50, 'SPHERE', brushShape === 'sphere');
@@ -2084,18 +2118,53 @@ function updatePlanePreview(start, end, isPainting) {
 		    drawButton(leftMenuCtx, 283, 60, btnW, 30, 'PAINT', transformMode === 'paint' && !isSettingPivot);
 		    drawButton(leftMenuCtx, 350, 60, btnW, 30, 'GOLDEN', false); 
 		    drawButton(leftMenuCtx, 417, 60, 80, 30, isSettingPivot ? 'PICK POS' : 'SET PIVOT', isSettingPivot);
-                    drawSlider(leftMenuCtx, 50, 100, 412, 30, 'ROT X', selectionRotX, -180, 180); drawSlider(leftMenuCtx, 50, 140, 412, 30, 'ROT Y', selectionRotY, -180, 180); drawSlider(leftMenuCtx, 50, 180, 412, 30, 'ROT Z', selectionRotZ, -180, 180);
-                    drawSlider(leftMenuCtx, 50, 220, 412, 30, 'SCALE', selectionScale, 0.1, 5.0, 'SCALE: %vx');
+                    drawRotationControl(leftMenuCtx,100,'ROT X',selectionRotX);
+                    drawRotationControl(leftMenuCtx,140,'ROT Y',selectionRotY);
+                    drawRotationControl(leftMenuCtx,180,'ROT Z',selectionRotZ);
+                    drawSlider(leftMenuCtx,50,220,412,30,'SCALE',selectionScale,0.1,5.0,'SCALE: %vx');
+                    leftMenuCtx.font='700 11px system-ui,sans-serif';leftMenuCtx.textAlign='right';leftMenuCtx.fillStyle=studioPalette.cyan;
+                    leftMenuCtx.fillText(`SNAP ${rotationSnapStep}° · TAP −/+ FOR EXACT STEP`,460,253);
                     if (transformMode === 'copy') { 
                         drawButton(leftMenuCtx, 50, 260, 80, 30, '[-]', false); drawButton(leftMenuCtx, 140, 260, 232, 30, `Copies: ${numCopies}`, false); drawButton(leftMenuCtx, 382, 260, 80, 30, '[+]', false); 
-                        drawSlider(leftMenuCtx, 50, 300, 412, 30, 'STEP ROT X', copyStepRotX, -180, 180); drawSlider(leftMenuCtx, 50, 335, 412, 30, 'STEP ROT Y', copyStepRotY, -180, 180); drawSlider(leftMenuCtx, 50, 370, 412, 30, 'STEP ROT Z', copyStepRotZ, -180, 180); drawSlider(leftMenuCtx, 50, 405, 412, 30, 'STEP SCALE', copyStepScale, 0.1, 5.0, 'STEP SCL: %vx');
+                        drawRotationControl(leftMenuCtx,300,'STEP X',copyStepRotX);
+                        drawRotationControl(leftMenuCtx,335,'STEP Y',copyStepRotY);
+                        drawRotationControl(leftMenuCtx,370,'STEP Z',copyStepRotZ);
+                        drawSlider(leftMenuCtx,50,405,412,30,'STEP SCALE',copyStepScale,0.1,5.0,'STEP SCL: %vx');
                         drawButton(leftMenuCtx, 50, 445, 130, 40, 'APPLY', false); drawButton(leftMenuCtx, 190, 445, 130, 40, 'CANCEL', false); drawButton(leftMenuCtx, 330, 445, 132, 40, 'DELETE', false);
-                    } else { drawButton(leftMenuCtx, 50, 270, 130, 40, 'APPLY', false); drawButton(leftMenuCtx, 190, 270, 130, 40, 'CANCEL', false); drawButton(leftMenuCtx, 330, 270, 132, 40, 'DELETE', false); }
+                    } else { drawButton(leftMenuCtx,50,270,130,40,'APPLY',false);drawButton(leftMenuCtx,190,270,130,40,'CANCEL',false);drawButton(leftMenuCtx,330,270,132,40,'DELETE',false);
+                        leftMenuCtx.textAlign='center';leftMenuCtx.fillStyle=studioPalette.muted;leftMenuCtx.font='15px system-ui,sans-serif';
+                        leftMenuCtx.fillText('Select rotation snap in B · WORKSPACE',256,366);
+                    }
                 }
             }
             leftMenuTexture.needsUpdate = true;
         }
 
+        function nudgeRotation(axis,sign) {
+            const delta=sign*rotationSnapStep;
+            let changed=false;
+            if(axis==='rotX'){const v=THREE.MathUtils.clamp(selectionRotX+delta,-180,180);changed=v!==selectionRotX;selectionRotX=v;}
+            else if(axis==='rotY'){const v=THREE.MathUtils.clamp(selectionRotY+delta,-180,180);changed=v!==selectionRotY;selectionRotY=v;}
+            else if(axis==='rotZ'){const v=THREE.MathUtils.clamp(selectionRotZ+delta,-180,180);changed=v!==selectionRotZ;selectionRotZ=v;}
+            else if(axis==='stepRotX'){copyStepRotX=THREE.MathUtils.clamp(copyStepRotX+delta,-180,180);changed=true;}
+            else if(axis==='stepRotY'){copyStepRotY=THREE.MathUtils.clamp(copyStepRotY+delta,-180,180);changed=true;}
+            else if(axis==='stepRotZ'){copyStepRotZ=THREE.MathUtils.clamp(copyStepRotZ+delta,-180,180);changed=true;}
+            if(changed){
+                if(!axis.startsWith('step')) {ensureBaseSelectionRemoved();updateRotatedSelection();}
+                leftMenuNeedsUpdate=true;
+            }
+        }
+        function rotationRowAt(y) {
+            if(y>=100&&y<=130) return 'rotX';
+            if(y>=140&&y<=170) return 'rotY';
+            if(y>=180&&y<=210) return 'rotZ';
+            if(transformMode==='copy') {
+                if(y>=300&&y<=330) return 'stepRotX';
+                if(y>=335&&y<=365) return 'stepRotY';
+                if(y>=370&&y<=400) return 'stepRotZ';
+            }
+            return null;
+        }
         function handleLeftMenuClick(cx, cy) {
             if (activeTool === 'select' && hasSelection) {
 if (cy >= 60 && cy <= 90) {
@@ -2336,15 +2405,15 @@ if (cy >= 60 && cy <= 90) {
         }
 
         function updateColorMenuTexture() {
-            colorMenuCtx.fillStyle = 'rgba(20, 20, 20, 0.95)'; colorMenuCtx.fillRect(0, 0, 512, 512);
+            studioPanel(colorMenuCtx,512,512,'#b7f2a0');
             const targetColor = slotColors[activeMatSlot][activeColorSubSlot];
             if (isPaletteMagnified) {
-                colorMenuCtx.fillStyle = '#4facfe'; colorMenuCtx.font = 'bold 26px sans-serif'; colorMenuCtx.textAlign = 'center'; colorMenuCtx.fillText(`Precision Picker`, 256, 36);
+                studioHeader(colorMenuCtx,'Precision Color','Y · RELEASE TO SET',studioPalette.lime);
                 drawColorPickerUI(colorMenuCtx, 256, 220, 150, 20, 400, 472, 30, targetColor, true);
                 colorMenuCtx.fillStyle = '#' + targetColor.getHexString(); colorMenuCtx.fillRect(20, 450, 472, 35);
                 targetColor.getHSL(tempHSL); colorMenuCtx.fillStyle = tempHSL.l > 0.6 ? 'black' : 'white'; colorMenuCtx.font = 'bold 20px sans-serif'; colorMenuCtx.fillText(`Release trigger to apply`, 256, 474);
             } else {
-                colorMenuCtx.fillStyle = '#4facfe'; colorMenuCtx.font = 'bold 22px sans-serif'; colorMenuCtx.textAlign = 'center'; colorMenuCtx.fillText(`Materials & Colors`, 256, 28);
+                studioHeader(colorMenuCtx,'Materials','Y · COLOR LAB',studioPalette.lime);
                 drawButton(colorMenuCtx, 30, 42, 220, 42, 'SLOT 1 (MAIN)', activeMatSlot === 0); drawButton(colorMenuCtx, 262, 42, 220, 42, 'SLOT 2 (WIRE/DIV)', activeMatSlot === 1);
                 
                 const mType = matTypes[activeMatSlot];
@@ -2476,7 +2545,7 @@ if (cy >= 60 && cy <= 90) {
                 if (cy >= 388) {
                     if (cx >= 35 && cx <= 135) { joyLTarget = joyLTarget === sBase ? -1 : sBase; if(joyRTarget === joyLTarget) joyRTarget = -1; }
                     else if (cx >= 142 && cx <= 242) { joyRTarget = joyRTarget === sBase ? -1 : sBase; if(joyLTarget === joyRTarget) joyLTarget = -1; }
-                    else if (cx >= 271 && cx <= 371) { joyLTarget = joyLTarget === sBase+1 ? -1 : sBase+1; if(joyRTarget === joyRTarget) joyRTarget = -1; }
+                    else if (cx >= 271 && cx <= 371) { joyLTarget = joyLTarget === sBase+1 ? -1 : sBase+1; if(joyRTarget === joyLTarget) joyRTarget = -1; }
                     else if (cx >= 378 && cx <= 478) { joyRTarget = joyRTarget === sBase+1 ? -1 : sBase+1; if(joyLTarget === joyRTarget) joyLTarget = -1; }
                 } else {
                     if (cx >= 30 && cx <= 246) activeColorSubSlot = 0;
@@ -2586,56 +2655,46 @@ if (cy >= 60 && cy <= 90) {
         }
 
         function updateRightMenuTexture() {
-            rightMenuCtx.fillStyle = 'rgba(20, 20, 20, 0.95)'; rightMenuCtx.fillRect(0, 0, 512, 600);
-            rightMenuCtx.fillStyle = '#4facfe'; rightMenuCtx.font = 'bold 26px sans-serif'; rightMenuCtx.textAlign = 'center'; rightMenuCtx.fillText(`Tool Selection (v2.4)`, 256, 28);
-            const tools = [
-                { id: 'brush', label: 'Brush (Standard)' },
-                { id: 'extrude', label: 'Extrude (Pull)' },
-                { id: 'line', label: 'Line & Arc Tool' },
-                { id: 'paint', label: 'Paint (Recolor)' },
-                { id: 'sculpt', label: 'Soft Sculpt' },
-                { id: 'plane', label: 'Plane (2D Grid/Shape)' },
-                { id: 'box', label: 'Box / Volumes' },
-                { id: 'quadsphere', label: 'Quad Sphere (Shell)' },
-                { id: 'cylinder', label: 'Cylinder / Prism' },
-                { id: 'triangle', label: 'Cone / Pyramid' },
-                { id: 'icosahedron', label: 'Poly / Platonic' },
-                { id: 'select', label: 'Select & Transform' },
-                { id: 'bouncy', label: 'Particle Brush' },
-                { id: 'torus', label: 'Torus / Ring / Arch' }
+            studioPanel(rightMenuCtx,512,600,'#8ba2ff');
+            studioHeader(rightMenuCtx,'Tool Library','A · 14 TOOLS','#a8b9ff');
+            const displayLabels = [
+                'BRUSH','EXTRUDE','LINE / ARC','PAINT','SOFT SCULPT','PLANE',
+                'BOX / VOLUME','QUAD SPHERE','CYLINDER','CONE / PYRAMID',
+                'PLATONIC SHAPES','SELECT / TRANSFORM','PARTICLE BRUSH','TORUS / ARCH'
             ];
-            for (let i = 0; i < tools.length; i++) drawButton(rightMenuCtx, 50, 44 + i * 39, 412, 34, tools[i].label, activeTool === tools[i].id);
-            rightMenuTexture.needsUpdate = true;
+            for(let i=0;i<studioTools.length;i++) {
+                const y=44+i*39;
+                const isCurrent=activeTool===studioTools[i].id;
+                rightMenuCtx.fillStyle=isCurrent?'#68e7dd':'#587987';
+                rightMenuCtx.font='700 12px system-ui,sans-serif';rightMenuCtx.textAlign='center';rightMenuCtx.textBaseline='middle';
+                rightMenuCtx.fillText(String(i+1).padStart(2,'0'),27,y+17);
+                drawButton(rightMenuCtx,50,y,412,34,displayLabels[i],isCurrent);
+                rightMenuCtx.textAlign='center';rightMenuCtx.font='700 9px system-ui,sans-serif';rightMenuCtx.fillStyle=isCurrent?'#baffc6':'#8ba8b9';
+                rightMenuCtx.fillText(studioTools[i].kind.toUpperCase(),485,y+17,44);
+            }
+            rightMenuTexture.needsUpdate=true;
         }
         updateRightMenuTexture();
 
-function handleRightMenuClick(cx, cy) {
-            if (cx >= 50 && cx <= 462 && cy >= 44 && cy <= 44 + 14 * 39) {
-                const idx = Math.floor((cy - 44) / 39);
-                
-                if (idx >= 0 && idx < 14) {
-                    if (hasSelection) applySelection();
-                    isPreviewingBox = isPreviewingSphere = isPreviewingPlane = isPreviewingTriangle = isPreviewingCylinder = isPreviewingTorus = isPreviewingIcosahedron = false;
-                    hideAllPreviews();
-                    bucketPreviewMesh.visible = linePreviewMesh.visible = false;
-
-                    const tools = ['brush', 'extrude', 'line', 'paint', 'sculpt', 'plane', 'box', 'quadsphere', 'cylinder', 'triangle', 'icosahedron', 'select', 'bouncy', 'torus'];
-                    
-                    activeTool = tools[idx];
-                    
-                    // Ensure brushSize is reset to 1 when re-entering Line Tool in Sheet Mode,
-                    // and reset ribbon shape when switching to tools that only support cube/sphere.
-                    if (activeTool === 'line' && lineDrawMode === 'sheet') {
-                        brushSize = 1;
-                    }
-                    if ((activeTool === 'line' || activeTool === 'paint') && brushShape === 'ribbon') {
-                        brushShape = 'cube';
-                    }
-
-
-                    updateCursors(); 
-                    rightMenuNeedsUpdate = leftMenuNeedsUpdate = true;
-                }
+        function activateStudioTool(toolId) {
+            if (!studioTools.some(t => t.id === toolId)) return;
+            // Re-selecting the current tool retains v2.6 behavior: commit an active selection.
+            if (hasSelection) applySelection();
+            isPreviewingBox = isPreviewingSphere = isPreviewingPlane = isPreviewingTriangle = isPreviewingCylinder = isPreviewingTorus = isPreviewingIcosahedron = false;
+            hideAllPreviews();
+            bucketPreviewMesh.visible = linePreviewMesh.visible = false;
+            activeTool=toolId;
+            if(activeTool==='line' && lineDrawMode==='sheet') brushSize=1;
+            if((activeTool==='line'||activeTool==='paint') && brushShape==='ribbon') brushShape='cube';
+            updateCursors();
+            rightMenuNeedsUpdate=leftMenuNeedsUpdate=true;
+            syncDesktopToolButtons();
+        }
+        function handleRightMenuClick(cx, cy) {
+            if(cx>=50&&cx<=462&&cy>=44&&cy<44+14*39) {
+                const idx=Math.floor((cy-44)/39);
+                // Reject gaps between visual buttons rather than choosing the next row.
+                if(idx>=0&&idx<14&&(cy-44)%39<=34) activateStudioTool(studioTools[idx].id);
             }
         }
 
@@ -2669,8 +2728,7 @@ function handleRightMenuClick(cx, cy) {
         }
 
         function updateGlobalMenuTexture() {
-            globalMenuCtx.fillStyle = 'rgba(20, 20, 20, 0.95)';
-            globalMenuCtx.fillRect(0, 0, 512, 1024);
+            studioPanel(globalMenuCtx,512,1024,'#b7f2a0');
 
             if (globalMenuMode === 'save') {
                 globalMenuCtx.fillStyle = '#00b894';
@@ -2799,7 +2857,7 @@ function handleRightMenuClick(cx, cy) {
             }
 
             // Default: 'main' Global Settings Menu
-            globalMenuCtx.fillStyle = '#4facfe'; globalMenuCtx.font = 'bold 28px sans-serif'; globalMenuCtx.textAlign = 'center'; globalMenuCtx.fillText(`Global Settings`, 256, 40);
+            studioHeader(globalMenuCtx,'Workspace','B · SETTINGS',studioPalette.lime);
             drawButton(globalMenuCtx, 40, 70, 200, 50, `V-Lock: ${isVerticalLock ? 'ON' : 'OFF'}`, isVerticalLock);
             drawButton(globalMenuCtx, 272, 70, 200, 50, `Clear Inside: ${clearInterior ? 'ON' : 'OFF'}`, clearInterior);
             drawButton(globalMenuCtx, 40, 140, 138, 50, `MX: ${mirrorX ? 'ON' : 'OFF'}`, mirrorX);
@@ -2819,7 +2877,7 @@ function handleRightMenuClick(cx, cy) {
             drawButton(globalMenuCtx, 40, 510, 200, 45, 'SAVE .VTB', false);
             drawButton(globalMenuCtx, 272, 510, 200, 45, 'LOAD .VTB', false);
 
-            globalMenuCtx.fillStyle = '#4facfe'; globalMenuCtx.font = 'bold 28px sans-serif'; globalMenuCtx.textAlign = 'center'; globalMenuCtx.fillText(`Grid Copy Array`, 256, 595);
+            studioSection(globalMenuCtx,'ARRAY · REPLICATE',595);
             
             drawButton(globalMenuCtx, 20, 615, 60, 45, `X:${gridCopyX ? 'ON' : 'OFF'}`, gridCopyX);
             drawButton(globalMenuCtx, 85, 615, 35, 45, '<<', false); drawButton(globalMenuCtx, 125, 615, 25, 45, '<', false); drawButton(globalMenuCtx, 155, 615, 95, 45, `Spc: ${gridCopyXSpace}`, false); drawButton(globalMenuCtx, 255, 615, 25, 45, '>', false); drawButton(globalMenuCtx, 285, 615, 35, 45, '>>', false);
@@ -2833,14 +2891,19 @@ function handleRightMenuClick(cx, cy) {
             drawButton(globalMenuCtx, 85, 735, 35, 45, '<<', false); drawButton(globalMenuCtx, 125, 735, 25, 45, '<', false); drawButton(globalMenuCtx, 155, 735, 95, 45, `Spc: ${gridCopyZSpace}`, false); drawButton(globalMenuCtx, 255, 735, 25, 45, '>', false); drawButton(globalMenuCtx, 285, 735, 35, 45, '>>', false);
             drawButton(globalMenuCtx, 330, 735, 30, 45, '-', false); drawButton(globalMenuCtx, 365, 735, 100, 45, `Num: ${gridCopyZCopies}`, false); drawButton(globalMenuCtx, 470, 735, 30, 45, '+', false);
 
-            if (vrStatusMsg) {
-                globalMenuCtx.fillStyle = '#00ffcc';
-                globalMenuCtx.font = 'bold 20px sans-serif';
-                globalMenuCtx.textAlign = 'center';
-                globalMenuCtx.fillText(vrStatusMsg, 256, 825);
+            studioSection(globalMenuCtx,'ROTATION · PRECISION',824);
+            globalMenuCtx.fillStyle=studioPalette.muted;globalMenuCtx.font='14px system-ui,sans-serif';globalMenuCtx.textAlign='center';
+            globalMenuCtx.fillText('Selection + copy rotation · snap / nudge angle',256,855);
+            drawButton(globalMenuCtx,40,874,132,56,'1° FINE',rotationSnapStep===1);
+            drawButton(globalMenuCtx,190,874,132,56,'5°',rotationSnapStep===5);
+            drawButton(globalMenuCtx,340,874,132,56,'15°',rotationSnapStep===15);
+            globalMenuCtx.fillStyle=studioPalette.muted;globalMenuCtx.font='12px system-ui,sans-serif';globalMenuCtx.textAlign='center';
+            globalMenuCtx.fillText('Change snap here, then use X · SELECT to rotate.',256,957);
+            if(vrStatusMsg) {
+                globalMenuCtx.fillStyle=studioPalette.lime;globalMenuCtx.font='700 17px system-ui,sans-serif';
+                globalMenuCtx.fillText(vrStatusMsg,256,984,475);
             }
-
-            globalMenuTexture.needsUpdate = true;
+            globalMenuTexture.needsUpdate=true;
         }
 
         function handleGlobalMenuClick(cx, cy) {
@@ -2926,6 +2989,12 @@ function handleRightMenuClick(cx, cy) {
                 return;
             }
 
+            if(cy>=874&&cy<=930) {
+                if(cx>=40&&cx<=172) setRotationSnapStep(1);
+                else if(cx>=190&&cx<=322) setRotationSnapStep(5);
+                else if(cx>=340&&cx<=472) setRotationSnapStep(15);
+                return;
+            }
             if (cy >= 70 && cy <= 120) { if (cx >= 40 && cx <= 240) isVerticalLock = !isVerticalLock; if (cx >= 272 && cx <= 472) clearInterior = !clearInterior; }
             if (cy >= 140 && cy <= 190) { if (cx >= 40 && cx <= 178) { mirrorX = !mirrorX; updateActiveSymmetries(); } if (cx >= 187 && cx <= 325) { mirrorY = !mirrorY; updateActiveSymmetries(); } if (cx >= 334 && cx <= 472) { mirrorZ = !mirrorZ; updateActiveSymmetries(); } }
             if (cy >= 210 && cy <= 260) { if (cx >= 40 && cx <= 90) polarSymmetry = Math.max(1, polarSymmetry - 1); if (cx >= 422 && cx <= 472) polarSymmetry = Math.min(16, polarSymmetry + 1); if (cx >= 100 && cx <= 412) polarSymmetry = polarSymmetry === 1 ? 4 : 1; updatePolarArrays(); }
@@ -6542,18 +6611,15 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                 if (leftMenuHovered && leftMenuMesh.visible) {
                     menuClickActive = true;
                     const cx=Math.floor(leftMenuUV.x*512), cy=Math.floor((1-leftMenuUV.y)*512);
-                    if(activeTool==='select'&&hasSelection){ 
-                        if(cy>=100&&cy<=130) activeSliderDrag='rotX'; 
-                        else if(cy>=140&&cy<=170) activeSliderDrag='rotY'; 
-                        else if(cy>=180&&cy<=210) activeSliderDrag='rotZ'; 
-                        else if(cy>=220&&cy<=250) activeSliderDrag='scale'; 
-                        else if(transformMode==='copy'){ 
-                            if(cy>=300&&cy<=330) activeSliderDrag='stepRotX'; 
-                            else if(cy>=335&&cy<=365) activeSliderDrag='stepRotY'; 
-                            else if(cy>=370&&cy<=400) activeSliderDrag='stepRotZ'; 
-                            else if(cy>=405&&cy<=435) activeSliderDrag='stepScale'; 
-                            else handleLeftMenuClick(cx,cy); 
-                        } else handleLeftMenuClick(cx,cy); 
+                    if(activeTool==='select'&&hasSelection) {
+                        const rotAxis=rotationRowAt(cy);
+                        if(rotAxis) {
+                            if(cx>=50&&cx<=90) nudgeRotation(rotAxis,-1);
+                            else if(cx>=422&&cx<=462) nudgeRotation(rotAxis,1);
+                            else if(cx>=93&&cx<=419) activeSliderDrag=rotAxis;
+                        } else if(cy>=220&&cy<=250) activeSliderDrag='scale';
+                        else if(transformMode==='copy'&&cy>=405&&cy<=435) activeSliderDrag='stepScale';
+                        else handleLeftMenuClick(cx,cy);
                     } else if (activeTool === 'line') {
                         if(cy >= 225 && cy <= 260) activeSliderDrag = 'arcBulge';
                         else if(cy >= 265 && cy <= 300) activeSliderDrag = 'arcTilt';
@@ -6939,6 +7005,8 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
         let lastDrawnLeftEffSize = -1;
         
         renderer.setAnimationLoop(() => {
+            const hudTime=performance.now();
+            if(hudTime-hudTick>900) {hudTick=hudTime;updateStudioHUD();}
             shiftProgress += 0.005 * shiftDir; if(shiftProgress>=1)shiftDir=-1; if(shiftProgress<=0)shiftDir=1;
             if (renderer.xr.isPresenting) {
                 const session = renderer.xr.getSession(); if(session) for(let i=0;i<session.inputSources.length;i++){ const s=session.inputSources[i]; if(s){ const c=i===0?controller0:controller1, g=i===0?grip0:grip1; if(s.handedness==='right'&&xrRight!==c){ xrRight=c; gripRight=g; xrRight.add(rightLaserLine, rightMenuMesh, globalMenuMesh, joyColorMesh); } else if(s.handedness==='left'&&xrLeft!==c){ xrLeft=c; gripLeft=g; xrLeft.add(leftLaserLine, leftMenuMesh, colorMenuMesh); } } }
@@ -6970,7 +7038,8 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                 if(Date.now()-lastMenuUpdateTime>100){ if(leftMenuMesh.visible&&leftMenuNeedsUpdate){ updateLeftMenuTexture(); leftMenuNeedsUpdate=false; } if(rightMenuMesh.visible&&rightMenuNeedsUpdate){ updateRightMenuTexture(); rightMenuNeedsUpdate=false; } if(colorMenuMesh.visible&&colorMenuNeedsUpdate){ updateColorMenuTexture(); colorMenuNeedsUpdate=false; } if(globalMenuMesh.visible&&globalMenuNeedsUpdate){ updateGlobalMenuTexture(); globalMenuNeedsUpdate=false; } lastMenuUpdateTime=Date.now(); }                if((rightMenuMesh.visible||globalMenuMesh.visible)&&xrLeft){ raycaster.set(leftPointerPos, leftDir); if(rightMenuMesh.visible){ const inters=raycaster.intersectObject(rightMenuMesh); if(inters.length>0){ rightMenuHovered=true; rightMenuUV.x=inters[0].uv.x; rightMenuUV.y=inters[0].uv.y; leftLaserLine.scale.z=inters[0].distance; } else rightMenuHovered=false; } else if(globalMenuMesh.visible){ const inters=raycaster.intersectObject(globalMenuMesh); if(inters.length>0){ globalMenuHovered=true; globalMenuUV.x=inters[0].uv.x; globalMenuUV.y=inters[0].uv.y; leftLaserLine.scale.z=inters[0].distance; } else globalMenuHovered=false; } leftLaserLine.visible=true; } else { rightMenuHovered=globalMenuHovered=false; if(leftLaserLine)leftLaserLine.visible=false; }
                 if((leftMenuMesh.visible||colorMenuMesh.visible)&&xrRight){ raycaster.set(rightPointerPos, rightDir); if(leftMenuMesh.visible){ const inters=raycaster.intersectObject(leftMenuMesh); if(inters.length>0){ leftMenuHovered=true; leftMenuUV.x=inters[0].uv.x; leftMenuUV.y=inters[0].uv.y; rightLaserLine.scale.z=inters[0].distance; } else leftMenuHovered=false; } else if(colorMenuMesh.visible){ const inters=raycaster.intersectObject(colorMenuMesh); if(inters.length>0){ colorMenuHovered=true; colorMenuUV.x=inters[0].uv.x; colorMenuUV.y=inters[0].uv.y; rightLaserLine.scale.z=inters[0].distance; } else colorMenuHovered=false; } rightLaserLine.visible=true; } else { leftMenuHovered=colorMenuHovered=false; if(rightLaserLine)rightLaserLine.visible=false; }
                 if(activeSliderDrag&&leftMenuHovered){
-                    const pct=Math.max(0,Math.min(1,(leftMenuUV.x*512-50)/412));
+                    const isRotationDrag=/^(rot[XYZ]|stepRot[XYZ])$/.test(activeSliderDrag);
+                    const pct=Math.max(0,Math.min(1,(leftMenuUV.x*512-(isRotationDrag?93:50))/(isRotationDrag?326:412)));
                     let ch=false;
                     if(activeSliderDrag==='arcBulge'){ arcBulge = Math.round((-5.0 + pct * 10.0) * 10) / 10; ch = true; }
                     else if(activeSliderDrag==='arcTilt'){ arcTilt = Math.round((-180 + pct * 360) / 5) * 5; ch = true; }
@@ -6979,7 +7048,7 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                         if(activeSliderDrag==='scale'&&selectionScale!==s){selectionScale=s; ch=true;} 
                         if(activeSliderDrag==='stepScale'&&copyStepScale!==s){copyStepScale=s; ch=true;} 
                     } else { 
-                        const v=Math.round((-180+pct*360)/15)*15; 
+                        const v=THREE.MathUtils.clamp(Math.round((-180+pct*360)/rotationSnapStep)*rotationSnapStep,-180,180); 
                         if(activeSliderDrag==='rotX'&&selectionRotX!==v){selectionRotX=v; ch=true;} 
                         if(activeSliderDrag==='rotY'&&selectionRotY!==v){selectionRotY=v; ch=true;} 
                         if(activeSliderDrag==='rotZ'&&selectionRotZ!==v){selectionRotZ=v; ch=true;} 
@@ -7537,6 +7606,41 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
         });
 
         refreshVRFileList();
+
+        // The desktop drawer is a companion to VR menus, not a replacement for their parameters.
+        const toolTray=document.getElementById('tools-drawer');
+        const toolList=document.getElementById('desktop-tool-list');
+        const toolLookup=new Map();
+        function syncDesktopToolButtons() {
+            for(const [tool,btn] of toolLookup){const active=activeTool===tool;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));}
+            const label=document.getElementById('hud-current-tool');
+            if(label) label.textContent=(studioTools.find(t=>t.id===activeTool)?.name||activeTool).toUpperCase();
+        }
+        for(const tool of studioTools) {
+            const btn=document.createElement('button');btn.className='tool-tile';btn.type='button';
+            btn.textContent=tool.name;
+            const kind=document.createElement('small');kind.textContent=tool.kind;btn.appendChild(kind);
+            btn.addEventListener('click',()=>activateStudioTool(tool.id));
+            toolList.appendChild(btn);toolLookup.set(tool.id,btn);
+        }
+        syncDesktopToolButtons();
+        document.getElementById('tool-drawer-toggle').addEventListener('click',()=>{toolTray.hidden=!toolTray.hidden;});
+        document.getElementById('close-tool-drawer').addEventListener('click',()=>{toolTray.hidden=true;});
+        document.getElementById('toggle-help').addEventListener('click',()=>{
+            const hud=document.getElementById('ui-container');hud.classList.toggle('compact');
+            document.getElementById('toggle-help').textContent=hud.classList.contains('compact')?'+':'−';
+        });
+        document.querySelectorAll('[data-rot-snap]').forEach(btn=>btn.addEventListener('click',()=>setRotationSnapStep(Number(btn.dataset.rotSnap))));
+        setRotationSnapStep(rotationSnapStep);
+        let hudTick=0;
+        function updateStudioHUD(){
+            document.getElementById('hud-voxels').textContent=totalActiveVoxels.toLocaleString();
+            document.getElementById('hud-perf').textContent=`${chunks.size.toLocaleString()} CHUNKS · ${renderMode==='standard'?'SOLID':'POINTS'}`;
+            const label=document.getElementById('hud-current-tool');
+            const current=(studioTools.find(t=>t.id===activeTool)?.name||activeTool).toUpperCase();
+            if(label.textContent!==current) {syncDesktopToolButtons();}
+        }
+        updateStudioHUD();
 
         const exportBtn = document.getElementById('export-button-overlay');
         if (exportBtn) {
