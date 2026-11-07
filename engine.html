@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo v4.2
+    VoxTrotBravo v4.3
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo v4.2</title>
+    <title>VoxTrotBravo v4.3</title>
     <style>
 :root{color-scheme:dark;--ink:#f0e8d3;--muted:#aeb8ac;--accent:#ffb064;--accent2:#b4e58b;--surface:#1b2521;--line:#56685a}
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111715;color:var(--ink);font-family:Consolas,'Lucida Console',monospace}canvas{display:block}button{font:inherit}
@@ -55,13 +55,13 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
 </head>
 <body>
     <div id="loading-overlay">
-        <h2>VoxTrotBravo v4.2</h2>
+        <h2>VoxTrotBravo v4.3</h2>
         <p>Preparing studio…</p>
         <div class="spinner"></div>
     </div>
 
     <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
-        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.2</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.3</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
         <div class="ui-content"><div class="eyebrow">Controller quick guide</div>
             <div class="command-rows">
                 <div class="command"><b>A · Right</b><span>Current tool settings / rotate</span></div>
@@ -188,9 +188,11 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         let extrudeColorMode = 'palette'; 
         let extrudeAdjoiningFilter = 'all'; 
         let extrudeVolumeMode = 'solid'; // New: 'solid' or 'hollow'
-        let brushShape = 'cube';   
-        let brushVolume = 'shell';
-        let brushSize = 1;
+        const strokeSettings = Object.fromEntries(['brush', 'line', 'paint'].map(id =>
+            [id, {size: 1, shape: 'cube', volume: 'shell'}]));
+        function lineRadius() {
+            return lineDrawMode === 'sheet' ? 1 : strokeSettings.line.size;
+        }
 	let brushPressureMode = false; // New: optional pressure mode
         let rightTriggerValue = 0; // New: tracking trigger pressure
         let leftTriggerValue = 0; // New: tracking trigger pressure 
@@ -245,8 +247,8 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         let icosahedronLock = true;
         let platonicType = 'icosahedron'; 
         
-        let wireWidth = 1; 
-        let wireFill = true; 
+        const wireSettings = Object.fromEntries(['box', 'cylinder', 'torus', 'triangle', 'icosahedron'].map(id =>
+            [id, {width: 1, fill: true}]));
 
         let paintMode = 'brush'; 
         let paintAction = 'replace'; // 'replace', 'bright_up', 'bright_down', 'blend', 'material'
@@ -1164,7 +1166,7 @@ const bucketPreviewMesh = new THREE.InstancedMesh(voxelGeometry, new THREE.MeshB
             }
             const arr = posAttr.array;
             let ptr = 0;
-            const r = (brushSize - 0.5) * VOXEL_SIZE;
+            const r = (lineRadius() - 0.5) * VOXEL_SIZE;
             
             for (let i = 0; i < segCount; i++) {
                 const A = points[i], B = points[i+1];
@@ -1543,8 +1545,9 @@ function updatePreviews() {
         }
 
         function updateCursors(leftOverride, rightOverride) {
-            let effSizeLeft = leftOverride !== undefined ? leftOverride : brushSize;
-            let effSizeRight = rightOverride !== undefined ? rightOverride : brushSize;
+            const cursorSettings = strokeSettings[activeTool] || strokeSettings.brush;
+            let effSizeLeft = leftOverride !== undefined ? leftOverride : (activeTool === 'line' ? lineRadius() : cursorSettings.size);
+            let effSizeRight = rightOverride !== undefined ? rightOverride : (activeTool === 'line' ? lineRadius() : cursorSettings.size);
             
             if (isDropperActive || activeTool === 'box' || activeTool === 'extrude' || activeTool === 'quadsphere' || activeTool === 'cylinder' || activeTool === 'torus' || activeTool === 'select' || activeTool === 'plane' || activeTool === 'triangle' || activeTool === 'icosahedron' || (activeTool === 'paint' && paintMode === 'bucket')) {
                 effSizeLeft = 1;
@@ -1559,8 +1562,8 @@ function updatePreviews() {
                 effSizeRight = rightOverride !== undefined ? rightOverride : bouncyRadius;
             }
 
-            const isRibbonShape = (activeTool === 'brush' && brushShape === 'ribbon');
-            const isBoxShape = isDropperActive || ((brushShape === 'cube' || (brushShape === 'ribbon' && activeTool !== 'brush')) && activeTool !== 'sculpt' && activeTool !== 'bouncy') || activeTool === 'box' || activeTool === 'select' || activeTool === 'cylinder' || activeTool === 'torus' || activeTool === 'quadsphere' || activeTool === 'plane' || activeTool === 'triangle' || activeTool === 'icosahedron' || (activeTool === 'paint' && paintMode === 'bucket');
+            const isRibbonShape = (activeTool === 'brush' && cursorSettings.shape === 'ribbon');
+            const isBoxShape = isDropperActive || ((cursorSettings.shape === 'cube' || (cursorSettings.shape === 'ribbon' && activeTool !== 'brush')) && activeTool !== 'sculpt' && activeTool !== 'bouncy') || activeTool === 'box' || activeTool === 'select' || activeTool === 'cylinder' || activeTool === 'torus' || activeTool === 'quadsphere' || activeTool === 'plane' || activeTool === 'triangle' || activeTool === 'icosahedron' || (activeTool === 'paint' && paintMode === 'bucket');
             const isBouncyShape = (activeTool === 'bouncy');
 
             const widthL = ((effSizeLeft - 1) * 2 + 1) * VOXEL_SIZE;
@@ -1841,8 +1844,8 @@ function updatePlanePreview(start, end, isPainting) {
         
         function updateLinePreviewMesh(startPos, endPos, isPainting) {
             const dist = startPos.distanceTo(endPos), steps = Math.min(600, Math.max(1, Math.ceil(dist / (VOXEL_SIZE * 0.25)))); 
-            let instCount = 0; const r = brushSize - 1, rSq = (r + 0.1) * (r + 0.1); 
-            const isInside = (dx, dy, dz) => brushShape === 'sphere' ? (dx*dx + dy*dy + dz*dz <= rSq) : (Math.abs(dx) <= r && Math.abs(dy) <= r && Math.abs(dz) <= r);
+            let instCount = 0; const r = lineRadius() - 1, rSq = (r + 0.1) * (r + 0.1); 
+            const isInside = (dx, dy, dz) => strokeSettings.line.shape === 'sphere' ? (dx*dx + dy*dy + dz*dz <= rSq) : (Math.abs(dx) <= r && Math.abs(dy) <= r && Math.abs(dz) <= r);
             fillVisited.clear(); let lastGx = Infinity, lastGy = Infinity, lastGz = Infinity;
             for (let i = 0; i <= steps; i++) {
                 tempPos.lerpVectors(startPos, endPos, i / steps); 
@@ -1850,7 +1853,7 @@ function updatePlanePreview(start, end, isPainting) {
                 if (cx !== lastGx || cy !== lastGy || cz !== lastGz) {
                     for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) for (let dz = -r; dz <= r; dz++) {
                         if (!isInside(dx, dy, dz)) continue;
-                        if (brushVolume === 'shell' && r > 0) { const sur = !isInside(dx+1,dy,dz)||!isInside(dx-1,dy,dz)||!isInside(dx,dy+1,dz)||!isInside(dx,dy-1,dz)||!isInside(dx,dy,dz+1)||!isInside(dx,dy,dz-1); if (!sur) continue; }
+                        if (strokeSettings.line.volume === 'shell' && r > 0) { const sur = !isInside(dx+1,dy,dz)||!isInside(dx-1,dy,dz)||!isInside(dx,dy+1,dz)||!isInside(dx,dy-1,dz)||!isInside(dx,dy,dz+1)||!isInside(dx,dy,dz-1); if (!sur) continue; }
                         const hash = (cx+dx + 32768) + (cy+dy + 32768) * 65536 + (cz+dz + 32768) * 4294967296;
                         if (!fillVisited.has(hash)) { fillVisited.add(hash); if (instCount < 80000) { const mArr = linePreviewMesh.instanceMatrix.array; mArr[instCount*16+12] = cx+dx; mArr[instCount*16+13] = cy+dy; mArr[instCount*16+14] = cz+dz; instCount++; } }                    }
                     lastGx = cx; lastGy = cy; lastGz = cz;
@@ -1977,13 +1980,13 @@ function updatePlanePreview(start, end, isPainting) {
             leftMenuCtx.fillStyle=studioPalette.muted;leftMenuCtx.textAlign='center';leftMenuCtx.font='11px system-ui,sans-serif';
             if(!(activeTool==='select'&&hasSelection&&transformMode==='copy')) leftMenuCtx.fillText('X TO CHANGE TOOLS / B FOR COLORS',256,503);
         if (activeTool === 'brush') {
-            drawButton(leftMenuCtx, 50, 70, 130, 50, 'CUBE', brushShape === 'cube'); 
-            drawButton(leftMenuCtx, 190, 70, 130, 50, 'SPHERE', brushShape === 'sphere');
-            drawButton(leftMenuCtx, 330, 70, 132, 50, 'RIBBON', brushShape === 'ribbon');
-            drawButton(leftMenuCtx, 50, 140, 200, 50, 'SOLID', brushVolume === 'solid');  
-            drawButton(leftMenuCtx, 262, 140, 200, 50, 'SHELL', brushVolume === 'shell');
+            drawButton(leftMenuCtx, 50, 70, 130, 50, 'CUBE', strokeSettings.brush.shape === 'cube'); 
+            drawButton(leftMenuCtx, 190, 70, 130, 50, 'SPHERE', strokeSettings.brush.shape === 'sphere');
+            drawButton(leftMenuCtx, 330, 70, 132, 50, 'RIBBON', strokeSettings.brush.shape === 'ribbon');
+            drawButton(leftMenuCtx, 50, 140, 200, 50, 'SOLID', strokeSettings.brush.volume === 'solid');  
+            drawButton(leftMenuCtx, 262, 140, 200, 50, 'SHELL', strokeSettings.brush.volume === 'shell');
             drawButton(leftMenuCtx, 50, 210, 80, 50, '[-]', false); 
-            drawButton(leftMenuCtx, 140, 210, 232, 50, `Radius: ${brushSize}`, false); 
+            drawButton(leftMenuCtx, 140, 210, 232, 50, `Radius: ${strokeSettings.brush.size}`, false); 
             drawButton(leftMenuCtx, 382, 210, 80, 50, '[+]', false);
             drawButton(leftMenuCtx, 50, 280, 412, 50, `Pressure Size: ${brushPressureMode ? 'ON' : 'OFF'}`, brushPressureMode);
         } else if (activeTool === 'extrude') {
@@ -2030,18 +2033,18 @@ function updatePlanePreview(start, end, isPainting) {
 
             const radiusLocked = (lineDrawMode === 'sheet');
             drawButton(leftMenuCtx, 50, 310, 80, 40, '[-]', false); 
-            drawButton(leftMenuCtx, 140, 310, 232, 40, radiusLocked ? `Radius: LOCKED` : `Radius: ${brushSize}`, radiusLocked); 
+            drawButton(leftMenuCtx, 140, 310, 232, 40, radiusLocked ? `Radius: LOCKED` : `Radius: ${strokeSettings.line.size}`, radiusLocked); 
             drawButton(leftMenuCtx, 382, 310, 80, 40, '[+]', false);
 
-            drawButton(leftMenuCtx, 50, 355, 200, 40, 'Shape: CUBE', brushShape === 'cube'); 
-            drawButton(leftMenuCtx, 262, 355, 200, 40, 'Shape: SPHERE', brushShape === 'sphere');
+            drawButton(leftMenuCtx, 50, 355, 200, 40, 'Shape: CUBE', strokeSettings.line.shape === 'cube'); 
+            drawButton(leftMenuCtx, 262, 355, 200, 40, 'Shape: SPHERE', strokeSettings.line.shape === 'sphere');
 
             drawButton(leftMenuCtx, 50, 400, 140, 40, 'STD-CLR', lineColorMode === 'standard'); 
             drawButton(leftMenuCtx, 200, 400, 140, 40, 'GRADIENT', lineColorMode === 'gradient');
             drawButton(leftMenuCtx, 350, 400, 120, 40, 'WILD', lineColorMode === 'wild');
 
-            drawButton(leftMenuCtx, 50, 445, 200, 40, 'SOLID', brushVolume === 'solid'); 
-            drawButton(leftMenuCtx, 262, 445, 200, 40, 'HOLLOW', brushVolume === 'shell');
+            drawButton(leftMenuCtx, 50, 445, 200, 40, 'SOLID', strokeSettings.line.volume === 'solid'); 
+            drawButton(leftMenuCtx, 262, 445, 200, 40, 'HOLLOW', strokeSettings.line.volume === 'shell');
         } else if (activeTool === 'paint') {
                 drawButton(leftMenuCtx, 50, 55, 200, 45, 'BRUSH', paintMode === 'brush');
                 drawButton(leftMenuCtx, 262, 55, 200, 45, 'BUCKET', paintMode === 'bucket');
@@ -2060,12 +2063,12 @@ function updatePlanePreview(start, end, isPainting) {
                 }
 
                 if (paintMode === 'brush') {
-                    drawButton(leftMenuCtx, 50, 285, 200, 45, 'Shape: CUBE', brushShape === 'cube');
-                    drawButton(leftMenuCtx, 262, 285, 200, 45, 'Shape: SPHERE', brushShape === 'sphere');
-                    drawButton(leftMenuCtx, 50, 340, 200, 45, 'SOLID', brushVolume === 'solid');
-                    drawButton(leftMenuCtx, 262, 340, 200, 45, 'SHELL', brushVolume === 'shell');
+                    drawButton(leftMenuCtx, 50, 285, 200, 45, 'Shape: CUBE', strokeSettings.paint.shape === 'cube');
+                    drawButton(leftMenuCtx, 262, 285, 200, 45, 'Shape: SPHERE', strokeSettings.paint.shape === 'sphere');
+                    drawButton(leftMenuCtx, 50, 340, 200, 45, 'SOLID', strokeSettings.paint.volume === 'solid');
+                    drawButton(leftMenuCtx, 262, 340, 200, 45, 'SHELL', strokeSettings.paint.volume === 'shell');
                     drawButton(leftMenuCtx, 50, 395, 80, 45, '[-]', false);
-                    drawButton(leftMenuCtx, 140, 395, 232, 45, `Radius: ${brushSize}`, false);
+                    drawButton(leftMenuCtx, 140, 395, 232, 45, `Radius: ${strokeSettings.paint.size}`, false);
                     drawButton(leftMenuCtx, 382, 395, 80, 45, '[+]', false);
                 }
             } else if (activeTool === 'sculpt') {
@@ -2079,7 +2082,7 @@ function updatePlanePreview(start, end, isPainting) {
                 drawButton(leftMenuCtx, 50, 280, 200, 50, 'CLR: PALETTE', bouncyColorMode === 'palette'); drawButton(leftMenuCtx, 262, 280, 200, 50, 'CLR: MATCH', bouncyColorMode === 'match');
             } else if (activeTool === 'box') {
                 drawButton(leftMenuCtx, 20, 70, 140, 50, 'SOLID', boxMode === 'solid'); drawButton(leftMenuCtx, 170, 70, 150, 50, 'SHELL', boxMode === 'shell'); drawButton(leftMenuCtx, 330, 70, 160, 50, 'WIRE', boxMode === 'wireframe');
-                if (boxMode === 'wireframe') { drawButton(leftMenuCtx, 20, 140, 50, 50, '-', false); drawButton(leftMenuCtx, 80, 140, 160, 50, `Thick: ${wireWidth}`, false); drawButton(leftMenuCtx, 250, 140, 50, 50, '+', false); drawButton(leftMenuCtx, 330, 140, 160, 50, `FILL: ${wireFill?'ON':'OFF'}`, wireFill); }
+                if (boxMode === 'wireframe') { drawButton(leftMenuCtx, 20, 140, 50, 50, '-', false); drawButton(leftMenuCtx, 80, 140, 160, 50, `Thick: ${wireSettings.box.width}`, false); drawButton(leftMenuCtx, 250, 140, 50, 50, '+', false); drawButton(leftMenuCtx, 330, 140, 160, 50, `FILL: ${wireSettings.box.fill?'ON':'OFF'}`, wireSettings.box.fill); }
                 drawButton(leftMenuCtx, 20, 210, 220, 50, `Divs: ${boxGridMode.toUpperCase()}`, false); drawButton(leftMenuCtx, 250, 210, 50, 50, '-', false); drawButton(leftMenuCtx, 310, 210, 120, 50, `DThk: ${boxDivThick}`, false); drawButton(leftMenuCtx, 440, 210, 50, 50, '+', false);
                 drawButton(leftMenuCtx, 20, 280, 40, 50, '-', false); drawButton(leftMenuCtx, 70, 280, 100, 50, `DivX: ${boxDivX}`, false); drawButton(leftMenuCtx, 180, 280, 40, 50, '+', false);
                 drawButton(leftMenuCtx, 250, 280, 40, 50, '-', false); drawButton(leftMenuCtx, 300, 280, 100, 50, `DivY: ${boxDivY}`, false); drawButton(leftMenuCtx, 410, 280, 40, 50, '+', false);
@@ -2101,9 +2104,9 @@ function updatePlanePreview(start, end, isPainting) {
 
                 if (cylinderMode === 'wireframe') { 
                     drawButton(leftMenuCtx, 20, 300, 50, 50, '-', false); 
-                    drawButton(leftMenuCtx, 80, 300, 160, 50, `Thick: ${wireWidth}`, false); 
+                    drawButton(leftMenuCtx, 80, 300, 160, 50, `Thick: ${wireSettings.cylinder.width}`, false); 
                     drawButton(leftMenuCtx, 250, 300, 50, 50, '+', false); 
-                    drawButton(leftMenuCtx, 330, 300, 160, 50, `FILL: ${wireFill?'ON':'OFF'}`, wireFill); 
+                    drawButton(leftMenuCtx, 330, 300, 160, 50, `FILL: ${wireSettings.cylinder.fill?'ON':'OFF'}`, wireSettings.cylinder.fill); 
                 }
             } else if (activeTool === 'torus') {
                 drawButton(leftMenuCtx, 20, 60, 140, 50, 'SOLID', torusMode === 'solid');
@@ -2130,9 +2133,9 @@ function updatePlanePreview(start, end, isPainting) {
                 drawButton(leftMenuCtx, 458, 300, 32, 50, '+', false);
                 if (torusMode === 'wireframe') {
                     drawButton(leftMenuCtx, 20, 360, 50, 50, '-', false);
-                    drawButton(leftMenuCtx, 80, 360, 160, 50, `Thick: ${wireWidth}`, false);
+                    drawButton(leftMenuCtx, 80, 360, 160, 50, `Thick: ${wireSettings.torus.width}`, false);
                     drawButton(leftMenuCtx, 250, 360, 50, 50, '+', false);
-                    drawButton(leftMenuCtx, 330, 360, 160, 50, `FILL: ${wireFill ? 'ON' : 'OFF'}`, wireFill);
+                    drawButton(leftMenuCtx, 330, 360, 160, 50, `FILL: ${wireSettings.torus.fill ? 'ON' : 'OFF'}`, wireSettings.torus.fill);
                 }
 
             } else if (activeTool === 'triangle') {
@@ -2165,9 +2168,9 @@ function updatePlanePreview(start, end, isPainting) {
                 // UI: Wireframe thickness
                 if (triangleMode === 'wireframe') { 
                     drawButton(leftMenuCtx, 20, 300, 50, 50, '-', false); 
-                    drawButton(leftMenuCtx, 80, 300, 160, 50, `Thick: ${wireWidth}`, false); 
+                    drawButton(leftMenuCtx, 80, 300, 160, 50, `Thick: ${wireSettings.triangle.width}`, false); 
                     drawButton(leftMenuCtx, 250, 300, 50, 50, '+', false); 
-                    drawButton(leftMenuCtx, 330, 300, 160, 50, `FILL: ${wireFill?'ON':'OFF'}`, wireFill); 
+                    drawButton(leftMenuCtx, 330, 300, 160, 50, `FILL: ${wireSettings.triangle.fill?'ON':'OFF'}`, wireSettings.triangle.fill); 
                 } 
                 
                 // UI: Grid Dividers
@@ -2185,7 +2188,7 @@ function updatePlanePreview(start, end, isPainting) {
                 drawButton(leftMenuCtx, 20, 60, 225, 45, 'TETRA', platonicType === 'tetrahedron'); drawButton(leftMenuCtx, 265, 60, 225, 45, 'OCTA', platonicType === 'octahedron'); drawButton(leftMenuCtx, 20, 110, 225, 45, 'ICOSA', platonicType === 'icosahedron'); drawButton(leftMenuCtx, 265, 110, 225, 45, 'DODECA', platonicType === 'dodecahedron');
                 drawButton(leftMenuCtx, 20, 165, 140, 50, 'SOLID', icosahedronMode === 'solid'); drawButton(leftMenuCtx, 170, 165, 150, 50, 'SHELL', icosahedronMode === 'shell'); drawButton(leftMenuCtx, 330, 165, 160, 50, 'WIRE', icosahedronMode === 'wireframe');
                 drawButton(leftMenuCtx, 20, 225, 220, 50, `LOCK RATIO: ${icosahedronLock ? 'ON' : 'OFF'}`, icosahedronLock); if (platonicType !== 'dodecahedron') { drawButton(leftMenuCtx, 250, 225, 50, 50, '-', false); drawButton(leftMenuCtx, 310, 225, 130, 50, `Divs: ${icosahedronDivs}`, false); drawButton(leftMenuCtx, 450, 225, 42, 50, '+', false); }
-                if (icosahedronMode === 'wireframe') { drawButton(leftMenuCtx, 20, 285, 50, 50, '-', false); drawButton(leftMenuCtx, 80, 285, 160, 50, `Thick: ${wireWidth}`, false); drawButton(leftMenuCtx, 250, 285, 50, 50, '+', false); drawButton(leftMenuCtx, 330, 285, 160, 50, `FILL: ${wireFill?'ON':'OFF'}`, wireFill); }
+                if (icosahedronMode === 'wireframe') { drawButton(leftMenuCtx, 20, 285, 50, 50, '-', false); drawButton(leftMenuCtx, 80, 285, 160, 50, `Thick: ${wireSettings.icosahedron.width}`, false); drawButton(leftMenuCtx, 250, 285, 50, 50, '+', false); drawButton(leftMenuCtx, 330, 285, 160, 50, `FILL: ${wireSettings.icosahedron.fill?'ON':'OFF'}`, wireSettings.icosahedron.fill); }
             } else if (activeTool === 'plane') {
                 drawButton(leftMenuCtx, 30, 70, 150, 50, `OUTLINE: ${planeOutline?'ON':'OFF'}`, planeOutline); drawButton(leftMenuCtx, 190, 70, 50, 50, '-', false); drawButton(leftMenuCtx, 250, 70, 160, 50, `O-Thick: ${planeOutlineThick}`, false); drawButton(leftMenuCtx, 420, 70, 50, 50, '+', false);
                 drawButton(leftMenuCtx, 30, 140, 100, 50, `FILL: ${planeFill?'ON':'OFF'}`, planeFill); drawButton(leftMenuCtx, 140, 140, 100, 50, `GRID: ${planeGrid?'ON':'OFF'}`, planeGrid); drawButton(leftMenuCtx, 250, 140, 40, 50, '-', false); drawButton(leftMenuCtx, 300, 140, 120, 50, `G-Thick: ${planeGridThick}`, false); drawButton(leftMenuCtx, 430, 140, 40, 50, '+', false);
@@ -2307,9 +2310,9 @@ if (cy >= 60 && cy <= 90) {
                 if (cy >= 70 && cy <= 110) { if (cx >= 50 && cx <= 250) selectMode = 'box'; if (cx >= 262 && cx <= 462) selectMode = 'connected'; } 
                 if (cy >= 120 && cy <= 160) { if (cx >= 50 && cx <= 180) selectFilter = 'all'; if (cx >= 190 && cx <= 320) selectFilter = 'color'; if (cx >= 330 && cx <= 462) selectFilter = 'material'; }
 	    } else if (activeTool === 'brush') {
-                if (cy >= 70 && cy <= 120) { if (cx >= 50 && cx <= 180) brushShape = 'cube'; else if (cx >= 190 && cx <= 320) brushShape = 'sphere'; else if (cx >= 330 && cx <= 462) brushShape = 'ribbon'; }
-                if (cy >= 140 && cy <= 190) { if (cx >= 50 && cx <= 250) brushVolume = 'solid'; if (cx >= 262 && cx <= 462) brushVolume = 'shell'; }
-                if (cy >= 210 && cy <= 260) { if (cx >= 50 && cx <= 130) brushSize = Math.max(1, brushSize - 1); if (cx >= 382 && cx <= 462) brushSize = Math.min(20, brushSize + 1); } 
+                if (cy >= 70 && cy <= 120) { if (cx >= 50 && cx <= 180) strokeSettings.brush.shape = 'cube'; else if (cx >= 190 && cx <= 320) strokeSettings.brush.shape = 'sphere'; else if (cx >= 330 && cx <= 462) strokeSettings.brush.shape = 'ribbon'; }
+                if (cy >= 140 && cy <= 190) { if (cx >= 50 && cx <= 250) strokeSettings.brush.volume = 'solid'; if (cx >= 262 && cx <= 462) strokeSettings.brush.volume = 'shell'; }
+                if (cy >= 210 && cy <= 260) { if (cx >= 50 && cx <= 130) strokeSettings.brush.size = Math.max(1, strokeSettings.brush.size - 1); if (cx >= 382 && cx <= 462) strokeSettings.brush.size = Math.min(20, strokeSettings.brush.size + 1); } 
                 if (cy >= 280 && cy <= 330) { if (cx >= 50 && cx <= 462) brushPressureMode = !brushPressureMode; }
 
             } else if (activeTool === 'extrude') {
@@ -2341,7 +2344,7 @@ if (cy >= 60 && cy <= 90) {
                 } 
                 else if (cy >= 90 && cy <= 130) { 
                     if (cx >= 50 && cx <= 190) { lineDrawMode = 'stroke'; lastArcPoints = []; }
-                    if (cx >= 200 && cx <= 340) { lineDrawMode = 'sheet'; lineMode = 'two-hand'; brushSize = 1; lastArcPoints = []; }
+                    if (cx >= 200 && cx <= 340) { lineDrawMode = 'sheet'; lineMode = 'two-hand'; lastArcPoints = []; }
                     if (cx >= 350 && cx <= 470 && lineDrawMode === 'sheet') {
                         lineSheetType = (lineSheetType === 'continuous') ? 'point' : 'continuous';
                         lastArcPoints = []; // Reset point memory when switching
@@ -2351,18 +2354,18 @@ if (cy >= 60 && cy <= 90) {
                 else if (cy >= 180 && cy <= 220) { if (cx >= 50 && cx <= 250) arcControlMode = 'dynamic'; if (cx >= 262 && cx <= 462) arcControlMode = 'manual'; }
                 else if (cy >= 310 && cy <= 350) { 
                     if (lineDrawMode !== 'sheet') {
-                        if (cx >= 50 && cx <= 130) brushSize = Math.max(1, brushSize - 1); 
-                        if (cx >= 382 && cx <= 462) brushSize = Math.min(20, brushSize + 1); 
+                        if (cx >= 50 && cx <= 130) strokeSettings.line.size = Math.max(1, strokeSettings.line.size - 1); 
+                        if (cx >= 382 && cx <= 462) strokeSettings.line.size = Math.min(20, strokeSettings.line.size + 1); 
                     }
                 }
-                else if (cy >= 355 && cy <= 395) { if (cx >= 50 && cx <= 250) brushShape = 'cube'; if (cx >= 262 && cx <= 462) brushShape = 'sphere'; } 
+                else if (cy >= 355 && cy <= 395) { if (cx >= 50 && cx <= 250) strokeSettings.line.shape = 'cube'; if (cx >= 262 && cx <= 462) strokeSettings.line.shape = 'sphere'; } 
 
                 else if (cy >= 400 && cy <= 440) {
                     if (cx >= 50 && cx <= 190) lineColorMode = 'standard';
                     else if (cx >= 200 && cx <= 340) lineColorMode = 'gradient';
                     else if (cx >= 350 && cx <= 470) lineColorMode = 'wild';
                 }
-                else if (cy >= 445 && cy <= 485) { if (cx >= 50 && cx <= 250) brushVolume = 'solid'; if (cx >= 262 && cx <= 462) brushVolume = 'shell'; }
+                else if (cy >= 445 && cy <= 485) { if (cx >= 50 && cx <= 250) strokeSettings.line.volume = 'solid'; if (cx >= 262 && cx <= 462) strokeSettings.line.volume = 'shell'; }
 
             }
  else if (activeTool === 'paint') {
@@ -2382,14 +2385,14 @@ if (cy >= 60 && cy <= 90) {
                 }
                 if (paintMode === 'brush') {
                     if (cy >= 285 && cy <= 330) {
-                        if (cx >= 50 && cx <= 250) brushShape = 'cube';
-                        if (cx >= 262 && cx <= 462) brushShape = 'sphere';
+                        if (cx >= 50 && cx <= 250) strokeSettings.paint.shape = 'cube';
+                        if (cx >= 262 && cx <= 462) strokeSettings.paint.shape = 'sphere';
                     } else if (cy >= 340 && cy <= 385) {
-                        if (cx >= 50 && cx <= 250) brushVolume = 'solid';
-                        if (cx >= 262 && cx <= 462) brushVolume = 'shell';
+                        if (cx >= 50 && cx <= 250) strokeSettings.paint.volume = 'solid';
+                        if (cx >= 262 && cx <= 462) strokeSettings.paint.volume = 'shell';
                     } else if (cy >= 395 && cy <= 440) {
-                        if (cx >= 50 && cx <= 130) brushSize = Math.max(1, brushSize - 1);
-                        if (cx >= 382 && cx <= 462) brushSize = Math.min(20, brushSize + 1);
+                        if (cx >= 50 && cx <= 130) strokeSettings.paint.size = Math.max(1, strokeSettings.paint.size - 1);
+                        if (cx >= 382 && cx <= 462) strokeSettings.paint.size = Math.min(20, strokeSettings.paint.size + 1);
                     }
                 }
             } else if (activeTool === 'sculpt') {
@@ -2406,7 +2409,7 @@ if (cy >= 60 && cy <= 90) {
                 else if (cy >= 120 && cy <= 170) { if (cx >= 20 && cx <= 160) triangleMode = 'solid'; if (cx >= 170 && cx <= 320) triangleMode = 'shell'; if (cx >= 330 && cx <= 490) triangleMode = 'wireframe'; } 
                 else if (cy >= 180 && cy <= 230) { if (cx >= 20 && cx <= 160) triangleAxis = 'X'; if (cx >= 170 && cx <= 320) triangleAxis = 'Y'; if (cx >= 330 && cx <= 490) triangleAxis = 'Z'; } 
                 else if (cy >= 240 && cy <= 290) { if (triangleType === 'pyramid') { if (cx >= 20 && cx <= 70) pyramidLegs = Math.max(3, pyramidLegs - 1); if (cx >= 250 && cx <= 300) pyramidLegs = Math.min(12, pyramidLegs + 1); } if (triangleMode !== 'solid' && cx >= 330 && cx <= 492) triangleCap = !triangleCap; } 
-                else if (cy >= 300 && cy <= 350 && triangleMode === 'wireframe') { if (cx >= 20 && cx <= 70) wireWidth = Math.max(1, wireWidth - 1); if (cx >= 250 && cx <= 300) wireWidth = Math.min(5, wireWidth + 1); if (cx >= 330 && cx <= 490) wireFill = !wireFill; } 
+                else if (cy >= 300 && cy <= 350 && triangleMode === 'wireframe') { if (cx >= 20 && cx <= 70) wireSettings.triangle.width = Math.max(1, wireSettings.triangle.width - 1); if (cx >= 250 && cx <= 300) wireSettings.triangle.width = Math.min(5, wireSettings.triangle.width + 1); if (cx >= 330 && cx <= 490) wireSettings.triangle.fill = !wireSettings.triangle.fill; } 
                 else if (cy >= 360 && cy <= 410) { if (cx >= 20 && cx <= 70) triangleDivs = Math.max(1, triangleDivs - 1); if (cx >= 210 && cx <= 260) triangleDivs = Math.min(20, triangleDivs + 1); if (cx >= 270 && cx <= 320) triangleDivThick = Math.max(1, triangleDivThick - 1); if (cx >= 440 && cx <= 490) triangleDivThick = Math.min(10, triangleDivThick + 1); } 
                 else if (cy >= 420 && cy <= 470 && cx >= 20 && cx <= 490) triangleGridMode = (triangleGridMode === 'internal') ? 'surface' : 'internal';
             } else if (activeTool === 'cylinder') {
@@ -2419,7 +2422,7 @@ if (cy >= 60 && cy <= 90) {
                     if (cx >= 270 && cx <= 320) cylinderDivThick = Math.max(1, cylinderDivThick - 1); 
                     if (cx >= 440 && cx <= 490) cylinderDivThick = Math.min(10, cylinderDivThick + 1); 
                 }
-                else if (cy >= 300 && cy <= 350 && cylinderMode === 'wireframe') { if (cx >= 20 && cx <= 70) wireWidth = Math.max(1, wireWidth - 1); if (cx >= 250 && cx <= 300) wireWidth = Math.min(5, wireWidth + 1); if (cx >= 330 && cx <= 490) wireFill = !wireFill; }
+                else if (cy >= 300 && cy <= 350 && cylinderMode === 'wireframe') { if (cx >= 20 && cx <= 70) wireSettings.cylinder.width = Math.max(1, wireSettings.cylinder.width - 1); if (cx >= 250 && cx <= 300) wireSettings.cylinder.width = Math.min(5, wireSettings.cylinder.width + 1); if (cx >= 330 && cx <= 490) wireSettings.cylinder.fill = !wireSettings.cylinder.fill; }
             } else if (activeTool === 'torus') {
                 if (cy >= 60 && cy <= 110) {
                     if (cx >= 20 && cx <= 160) torusMode = 'solid';
@@ -2444,19 +2447,19 @@ if (cy >= 60 && cy <= 90) {
                     if (cx >= 376 && cx <= 408) torusDivThick = Math.max(1, torusDivThick - 1);
                     if (cx >= 458 && cx <= 490) torusDivThick = Math.min(10, torusDivThick + 1);
                 } else if (cy >= 360 && cy <= 410 && torusMode === 'wireframe') {
-                    if (cx >= 20 && cx <= 70) wireWidth = Math.max(1, wireWidth - 1);
-                    if (cx >= 250 && cx <= 300) wireWidth = Math.min(5, wireWidth + 1);
-                    if (cx >= 330 && cx <= 490) wireFill = !wireFill;
+                    if (cx >= 20 && cx <= 70) wireSettings.torus.width = Math.max(1, wireSettings.torus.width - 1);
+                    if (cx >= 250 && cx <= 300) wireSettings.torus.width = Math.min(5, wireSettings.torus.width + 1);
+                    if (cx >= 330 && cx <= 490) wireSettings.torus.fill = !wireSettings.torus.fill;
                 }
             } else if (activeTool === 'icosahedron') {
                 if (cy >= 60 && cy <= 105) { if (cx >= 20 && cx <= 245) platonicType = 'tetrahedron'; if (cx >= 265 && cx <= 490) platonicType = 'octahedron'; } 
                 else if (cy >= 110 && cy <= 155) { if (cx >= 20 && cx <= 245) platonicType = 'icosahedron'; if (cx >= 265 && cx <= 490) platonicType = 'dodecahedron'; } 
                 else if (cy >= 165 && cy <= 215) { if (cx >= 20 && cx <= 160) icosahedronMode = 'solid'; if (cx >= 170 && cx <= 320) icosahedronMode = 'shell'; if (cx >= 330 && cx <= 490) icosahedronMode = 'wireframe'; } 
                 else if (cy >= 225 && cy <= 275) { if (cx >= 20 && cx <= 240) icosahedronLock = !icosahedronLock; if (platonicType !== 'dodecahedron') { if (cx >= 250 && cx <= 300) icosahedronDivs = Math.max(1, icosahedronDivs - 1); if (cx >= 450 && cx <= 492) icosahedronDivs = Math.min(5, icosahedronDivs + 1); } } 
-                else if (cy >= 285 && cy <= 335 && icosahedronMode === 'wireframe') { if (cx >= 20 && cx <= 70) wireWidth = Math.max(1, wireWidth - 1); if (cx >= 250 && cx <= 300) wireWidth = Math.min(5, wireWidth + 1); if (cx >= 330 && cx <= 490) wireFill = !wireFill; }
+                else if (cy >= 285 && cy <= 335 && icosahedronMode === 'wireframe') { if (cx >= 20 && cx <= 70) wireSettings.icosahedron.width = Math.max(1, wireSettings.icosahedron.width - 1); if (cx >= 250 && cx <= 300) wireSettings.icosahedron.width = Math.min(5, wireSettings.icosahedron.width + 1); if (cx >= 330 && cx <= 490) wireSettings.icosahedron.fill = !wireSettings.icosahedron.fill; }
             } else if (activeTool === 'box') {
                 if (cy >= 70 && cy <= 120) { if (cx >= 20 && cx <= 160) boxMode = 'solid'; if (cx >= 170 && cx <= 320) boxMode = 'shell'; if (cx >= 330 && cx <= 490) boxMode = 'wireframe'; } 
-                else if (cy >= 140 && cy <= 190 && boxMode === 'wireframe') { if (cx >= 20 && cx <= 70) wireWidth = Math.max(1, wireWidth - 1); if (cx >= 250 && cx <= 300) wireWidth = Math.min(5, wireWidth + 1); if (cx >= 330 && cx <= 490) wireFill = !wireFill; } 
+                else if (cy >= 140 && cy <= 190 && boxMode === 'wireframe') { if (cx >= 20 && cx <= 70) wireSettings.box.width = Math.max(1, wireSettings.box.width - 1); if (cx >= 250 && cx <= 300) wireSettings.box.width = Math.min(5, wireSettings.box.width + 1); if (cx >= 330 && cx <= 490) wireSettings.box.fill = !wireSettings.box.fill; } 
                 else if (cy >= 210 && cy <= 260) { if (cx >= 20 && cx <= 240) boxGridMode = boxGridMode === 'internal' ? 'surface' : 'internal'; if (cx >= 250 && cx <= 300) boxDivThick = Math.max(1, boxDivThick - 1); if (cx >= 440 && cx <= 490) boxDivThick = Math.min(10, boxDivThick + 1); } 
                 else if (cy >= 280 && cy <= 330) { if (cx >= 20 && cx <= 60) boxDivX = Math.max(1, boxDivX - 1); if (cx >= 180 && cx <= 220) boxDivX = Math.min(20, boxDivX + 1); if (cx >= 250 && cx <= 290) boxDivY = Math.max(1, boxDivY - 1); if (cx >= 410 && cx <= 450) boxDivY = Math.min(20, boxDivY + 1); } 
                 else if (cy >= 350 && cy <= 400) { if (cx >= 20 && cx <= 60) boxDivZ = Math.max(1, boxDivZ - 1); if (cx >= 180 && cx <= 220) boxDivZ = Math.min(20, boxDivZ + 1); }
@@ -2752,14 +2755,46 @@ if (cy >= 60 && cy <= 90) {
         // Three navigation groups: tool count unchanged, but selection is now task-oriented.
         const toolMenuGroups={mark:['brush','line','paint','sculpt','bouncy','extrude'],build:['plane','box','quadsphere','cylinder','triangle','icosahedron','torus'],edit:['select']};
         let toolMenuPage='mark';
+        const lastToolByPage = {mark: 'brush', build: 'plane', edit: 'select'};
         const recentToolIds=['brush'];
         let toolMenuTargets=[];
+        function restoreToolProfiles(saved) {
+            const bounded = (value, max) => Number.isInteger(value) ? Math.max(1, Math.min(max, value)) : 1;
+            for (const [id, profile] of Object.entries(strokeSettings)) {
+                const stored = saved.strokeSettings?.[id];
+                const shape = stored?.shape ?? saved.brushShape;
+                profile.size = bounded(stored?.size ?? saved.brushSize, 20);
+                profile.shape = shape === 'sphere' || (id === 'brush' && shape === 'ribbon') ? shape : 'cube';
+                profile.volume = (stored?.volume ?? saved.brushVolume) === 'solid' ? 'solid' : 'shell';
+            }
+            for (const [id, profile] of Object.entries(wireSettings)) {
+                const stored = saved.wireSettings?.[id];
+                profile.width = bounded(stored?.width ?? saved.wireWidth, 5);
+                profile.fill = (stored?.fill ?? saved.wireFill) !== false;
+            }
+        }
+        function restoreToolHistory(saved) {
+            for (const [page, ids] of Object.entries(toolMenuGroups)) {
+                const previous = saved.lastToolByPage?.[page];
+                lastToolByPage[page] = ids.includes(previous) ? previous : ids[0];
+                if (ids.includes(activeTool)) {
+                    toolMenuPage = page;
+                    lastToolByPage[page] = activeTool;
+                }
+            }
+            recentToolIds.length = 0;
+            const history = Array.isArray(saved.recentToolIds) ? saved.recentToolIds : [];
+            for (const id of [activeTool, ...history]) {
+                if (studioTools.some(tool => tool.id === id) && !recentToolIds.includes(id)) recentToolIds.push(id);
+                if (recentToolIds.length === 4) break;
+            }
+        }
         function toolMenuButton(x,y,w,h,label,active,fn){
             drawButton(rightMenuCtx,x,y,w,h,label,active);toolMenuTargets.push({x,y,w,h,fn});
         }
         function setToolMenuPage(page){
             if(!toolMenuGroups[page])return;
-            toolMenuPage=page;rightMenuNeedsUpdate=true;syncDesktopToolButtons();
+            activateStudioTool(lastToolByPage[page]);
         }
         function updateRightMenuTexture(){
             studioPanel(rightMenuCtx,512,600);
@@ -2799,14 +2834,14 @@ if (cy >= 60 && cy <= 90) {
         }
         updateRightMenuTexture();
         function activateStudioTool(toolId){
+            if(toolId === activeTool) return;
             if(!studioTools.some(t=>t.id===toolId))return;
             if(hasSelection)applySelection();
-            isPreviewingBox=isPreviewingSphere=isPreviewingPlane=isPreviewingTriangle=isPreviewingCylinder=isPreviewingTorus=isPreviewingIcosahedron=false;
+            isPreviewingExtrude=isPreviewingBox=isPreviewingSphere=isPreviewingPlane=isPreviewingTriangle=isPreviewingCylinder=isPreviewingTorus=isPreviewingIcosahedron=false;
             hideAllPreviews();bucketPreviewMesh.visible=linePreviewMesh.visible=false;
             activeTool=toolId;
-            if(activeTool==='line'&&lineDrawMode==='sheet')brushSize=1;
-            if((activeTool==='line'||activeTool==='paint')&&brushShape==='ribbon')brushShape='cube';
             toolMenuPage=Object.entries(toolMenuGroups).find(([_,ids])=>ids.includes(toolId))?.[0]||'mark';
+            lastToolByPage[toolMenuPage] = toolId;
             recentToolIds.unshift(toolId);
             for(let i=1;i<recentToolIds.length;){if(recentToolIds[i]===toolId)recentToolIds.splice(i,1);else i++;}
             recentToolIds.length=Math.min(4,recentToolIds.length);
@@ -3601,12 +3636,12 @@ if (cy >= 60 && cy <= 90) {
                     gc: [gridCopyX, gridCopyXSpace, gridCopyXCopies, gridCopyY, gridCopyYSpace, gridCopyYCopies, gridCopyZ, gridCopyZSpace, gridCopyZCopies],
                     tl: {
                         activeTool, extrudeAxis, extrudeAdjoining, extrudeColorMode, extrudeAdjoiningFilter, extrudeVolumeMode,
-                        brushShape, brushVolume, brushSize, brushPressureMode, sculptSize, sculptDensity, sculptPressureMode,
+                        strokeSettings, lastToolByPage, recentToolIds, brushShape: strokeSettings.brush.shape, brushVolume: strokeSettings.brush.volume, brushSize: strokeSettings.brush.size, brushPressureMode, sculptSize, sculptDensity, sculptPressureMode,
                         bouncyRadius, bouncySpeed, bouncyCount, bouncyColorMode, boxMode, boxGridMode, boxDivX, boxDivY, boxDivZ, boxDivThick,
                         sphereMode, cylinderMode, cylinderSides, cylinderAxis, cylinderCap, cylinderDivs, cylinderDivThick,
                         torusMode, torusSides, torusAxis, torusTubePct, torusSweep, torusDivs, torusTubeDivs, torusDivThick,
                         triangleType, triangleMode, triangleAxis, triangleGridMode, triangleDivs, triangleDivThick, triangleCap, pyramidLegs,
-                        icosahedronMode, icosahedronDivs, icosahedronLock, platonicType, wireWidth, wireFill,
+                        icosahedronMode, icosahedronDivs, icosahedronLock, platonicType, wireSettings, wireWidth: (wireSettings[activeTool] || wireSettings.box).width, wireFill: (wireSettings[activeTool] || wireSettings.box).fill,
                         paintMode, paintAction, paintStrength, planeOutline, planeOutlineThick, planeFill, planeGrid, planeGridThick, planeDivU, planeDivV, planeThick,
                         lineMode, lineType, lineDrawMode, lineSheetType, lineColorMode, arcBulge, arcControlMode, arcTilt
                     }
@@ -3952,9 +3987,7 @@ if (cy >= 60 && cy <= 90) {
                     if (t.extrudeColorMode !== undefined) extrudeColorMode = t.extrudeColorMode;
                     if (t.extrudeAdjoiningFilter !== undefined) extrudeAdjoiningFilter = t.extrudeAdjoiningFilter;
                     if (t.extrudeVolumeMode !== undefined) extrudeVolumeMode = t.extrudeVolumeMode;
-                    if (t.brushShape !== undefined) brushShape = t.brushShape;
-                    if (t.brushVolume !== undefined) brushVolume = t.brushVolume;
-                    if (t.brushSize !== undefined) brushSize = t.brushSize;
+                    restoreToolProfiles(t);
                     if (t.brushPressureMode !== undefined) brushPressureMode = t.brushPressureMode;
                     if (t.sculptSize !== undefined) sculptSize = t.sculptSize;
                     if (t.sculptDensity !== undefined) sculptDensity = t.sculptDensity;
@@ -3996,8 +4029,6 @@ if (cy >= 60 && cy <= 90) {
                     if (t.icosahedronDivs !== undefined) icosahedronDivs = t.icosahedronDivs;
                     if (t.icosahedronLock !== undefined) icosahedronLock = t.icosahedronLock;
                     if (t.platonicType !== undefined) platonicType = t.platonicType;
-                    if (t.wireWidth !== undefined) wireWidth = t.wireWidth;
-                    if (t.wireFill !== undefined) wireFill = t.wireFill;
                     if (t.paintMode !== undefined) paintMode = t.paintMode;
                     if (t.paintAction !== undefined) paintAction = t.paintAction;
                     if (t.paintStrength !== undefined) paintStrength = t.paintStrength;
@@ -4105,7 +4136,8 @@ if (cy >= 60 && cy <= 90) {
                 updateCursors();
                 flushDirtyChunks();
                 leftMenuNeedsUpdate = rightMenuNeedsUpdate = colorMenuNeedsUpdate = globalMenuNeedsUpdate = true;
-                toolMenuPage = Object.keys(toolMenuGroups).find(page => toolMenuGroups[page].includes(activeTool)) || 'mark';
+                restoreToolHistory(meta.tl || {});
+                lastArcPoints.length = 0;
                 syncDesktopToolButtons();
                 sessionStatus.textContent = '';
                 return true;
@@ -5271,7 +5303,7 @@ if (cy >= 60 && cy <= 90) {
         }
 
         function getEffectiveBrushSize(isRight) {
-            if (!brushPressureMode || activeTool !== 'brush') return brushSize;
+            if (!brushPressureMode || activeTool !== 'brush') return strokeSettings.brush.size;
             const pressure = isRight ? rightTriggerValue : leftTriggerValue;
             if (pressure <= 0.05) return 1; // Deadzone
             
@@ -5281,7 +5313,7 @@ if (cy >= 60 && cy <= 90) {
             // Apply a smooth sine easing curve for more evenly shaped tapers
             const easedPressure = -(Math.cos(Math.PI * activePressure) - 1) / 2;
             
-            return Math.round(1 + (brushSize - 1) * easedPressure);
+            return Math.round(1 + (strokeSettings.brush.size - 1) * easedPressure);
         }
 
         function getEffectiveSculptSize(isRight) {
@@ -5338,11 +5370,11 @@ if (cy >= 60 && cy <= 90) {
             return kernel;
         }
 
-        function placeBrushVoxels(pos, isP, overrideSize = brushSize, ctrlQuat = null) {
+        function placeBrushVoxels(pos, isP, overrideSize = strokeSettings.brush.size, ctrlQuat = null) {
             const r = overrideSize - 1;
-            const isRibbon = (brushShape === 'ribbon' && ctrlQuat !== null);
-            const isSphere = (brushShape === 'sphere');
-            const isShellDraw = (isP && brushVolume === 'shell' && r > 0);
+            const isRibbon = (strokeSettings.brush.shape === 'ribbon' && ctrlQuat !== null);
+            const isSphere = (strokeSettings.brush.shape === 'sphere');
+            const isShellDraw = (isP && strokeSettings.brush.volume === 'shell' && r > 0);
             const loopR = isRibbon ? Math.ceil(overrideSize * 1.5) : r;
             const cGx = Math.round(pos.x / VOXEL_SIZE);
             const cGy = Math.round(pos.y / VOXEL_SIZE);
@@ -5447,10 +5479,10 @@ if (cy >= 60 && cy <= 90) {
         }
 
         function placePaintVoxels(pos, actionOverride = paintAction) {
-            const r = brushSize - 1;
+            const r = strokeSettings.paint.size - 1;
             const cGx = Math.round(pos.x / VOXEL_SIZE), cGy = Math.round(pos.y / VOXEL_SIZE), cGz = Math.round(pos.z / VOXEL_SIZE);
-            const kernel = getBrushKernel(brushShape === 'sphere', r);
-            const offsets = (brushVolume === 'shell' && r > 0) ? kernel.surface : kernel.all;
+            const kernel = getBrushKernel(strokeSettings.paint.shape === 'sphere', r);
+            const offsets = (strokeSettings.paint.volume === 'shell' && r > 0) ? kernel.surface : kernel.all;
             const minX = cGx - r, maxX = cGx + r, minY = cGy - r, maxY = cGy + r, minZ = cGz - r, maxZ = cGz + r;
             const matType = matTypes[activeMatSlot];
 
@@ -5460,14 +5492,14 @@ if (cy >= 60 && cy <= 90) {
             }
         }
 
-        function drawLineVoxels(start, end, isP, startSize = brushSize, endSize = brushSize, startQuat = null, endQuat = null) {
+        function drawLineVoxels(start, end, isP, startSize = strokeSettings.brush.size, endSize = strokeSettings.brush.size, startQuat = null, endQuat = null) {
             const dist = start.distanceTo(end);
             const steps = Math.min(600, Math.max(1, Math.ceil(dist / (VOXEL_SIZE * 0.25)))); 
             let lastGx = Math.round(start.x / VOXEL_SIZE);
             let lastGy = Math.round(start.y / VOXEL_SIZE);
             let lastGz = Math.round(start.z / VOXEL_SIZE);
             let lastSize = startSize;
-            const useConnectedSteps = (isP && brushVolume === 'shell');
+            const useConnectedSteps = (isP && strokeSettings.brush.volume === 'shell');
 
             for (let i = 1; i <= steps; i++) { 
                 const t = i / steps;
@@ -5514,7 +5546,7 @@ if (cy >= 60 && cy <= 90) {
             const r = thick - 1, rSq = (r + 0.1) * (r + 0.1);
             
             fillVisited.clear(); 
-            const isInside = (dx,dy,dz) => brushShape==='sphere' ? (dx*dx+dy*dy+dz*dz <= rSq) : (Math.abs(dx) <= r && Math.abs(dy) <= r && Math.abs(dz) <= r);
+            const isInside = (dx,dy,dz) => strokeSettings.line.shape==='sphere' ? (dx*dx+dy*dy+dz*dz <= rSq) : (Math.abs(dx) <= r && Math.abs(dy) <= r && Math.abs(dz) <= r);
 
             for (let v = 0; v <= stepsV; v++) {
                 sheetPosL.copy(pL1).lerp(pL2, v / stepsV); 
@@ -5530,7 +5562,7 @@ if (cy >= 60 && cy <= 90) {
                         for (let dy = -r; dy <= r; dy++) {
                             for (let dz = -r; dz <= r; dz++) {
                                 if (!isInside(dx, dy, dz)) continue;
-                                if (brushVolume === 'shell' && r > 0) {
+                                if (strokeSettings.line.volume === 'shell' && r > 0) {
                                     const sur = !isInside(dx + 1, dy, dz) || !isInside(dx - 1, dy, dz) || !isInside(dx, dy + 1, dz) || !isInside(dx, dy - 1, dz) || !isInside(dx, dy, dz + 1) || !isInside(dx, dy - 1, dz);
                                     if (!sur) continue;
                                 }
@@ -5620,7 +5652,7 @@ if (cy >= 60 && cy <= 90) {
                 lineToolArcUp.set(0, 1, 0);
             }
 
-            const r = (brushSize - 1) * VOXEL_SIZE;
+            const r = (lineRadius() - 1) * VOXEL_SIZE;
             const tolerance = VOXEL_SIZE * 0.85;
             const rTolSq = (r + tolerance) * (r + tolerance);
             const rTol = r + tolerance;
@@ -5670,7 +5702,7 @@ if (cy >= 60 && cy <= 90) {
                     lineToolDistVec.copy(seg.A).addScaledVector(seg.normDir, clampedT);
                     lineToolDistVec.subVectors(pos, lineToolDistVec);
 
-                    const inside = (brushShape === 'sphere')
+                    const inside = (strokeSettings.line.shape === 'sphere')
                         ? (lineToolDistVec.lengthSq() <= rTolSq)
                         : (Math.abs(lineToolDistVec.dot(seg.u)) <= rTol && Math.abs(lineToolDistVec.dot(seg.v)) <= rTol);
 
@@ -5683,7 +5715,7 @@ if (cy >= 60 && cy <= 90) {
 
             const validMap = new Map();
             const validCoords = [];
-            const rad = brushSize;
+            const rad = lineRadius();
 
             for (let i = 0; i < segCount; i++) {
                 const seg = lineSegmentPool[i];
@@ -5711,7 +5743,7 @@ if (cy >= 60 && cy <= 90) {
                 }
             }
 
-            const isSolid = (brushVolume === 'solid' || brushSize === 1);
+            const isSolid = (strokeSettings.line.volume === 'solid' || lineRadius() === 1);
             const matType = matTypes[activeMatSlot];
             for (let i = 0, len = validCoords.length; i < len; i += 5) {
                 const gx = validCoords[i], gy = validCoords[i + 1], gz = validCoords[i + 2];
@@ -5853,7 +5885,7 @@ if (cy >= 60 && cy <= 90) {
 
     if ((maxX - minX) > 800 || (maxY - minY) > 800 || (maxZ - minZ) > 800) return;
 
-    const w = wireWidth - 1;
+    const w = wireSettings.box.width - 1;
     const divX = new Uint8Array(maxX - minX + 1);
     const divY = new Uint8Array(maxY - minY + 1);
     const divZ = new Uint8Array(maxZ - minZ + 1);
@@ -5929,7 +5961,7 @@ if (cy >= 60 && cy <= 90) {
                 let targetSlot = -1;
                 if (boxMode === 'wireframe') {
                     if (isEdge || isDivVoxel) targetSlot = 1;
-                    else if (wireFill && isFace) targetSlot = 0;
+                    else if (wireSettings.box.fill && isFace) targetSlot = 0;
                 } else if (boxMode === 'shell') {
                     if (isDivVoxel) targetSlot = 1;
                     else if (isFace) targetSlot = 0;
@@ -6034,8 +6066,8 @@ function executeQuadSphereTool(startPos, endPos, isPainting) {
             const updG=(gx,gy,gz)=>{ if(gx<minX||gx>maxX||gz<minZ||gz>maxZ)return; const idx=(gx-minX)+(gz-minZ)*sX; minYGrid[idx]=Math.min(minYGrid[idx],gy); maxYGrid[idx]=Math.max(maxYGrid[idx],gy); };
             const dV=(gx,gy,gz,col,m)=>{ if(gx<minX||gx>maxX||gy<minY||gy>maxY||gz<minZ||gz>maxZ)return; const h=(gx+32768)+(gy+32768)*65536+(gz+32768)*4294967296; if(!drawn.has(h)){ drawn.add(h); setVoxel(gx,gy,gz,isP,col,m); } updG(gx,gy,gz); };
             if (icosahedronMode === 'wireframe') {
-                for(const e of edges){ const p1=verts[e[0]], p2=verts[e[1]], steps=Math.max(1,Math.ceil(p1.distanceTo(p2)*2)), r=wireWidth-1; for(let i=0; i<=steps; i++){ tempPos.lerpVectors(p1,p2,i/steps); const cx=Math.round(tempPos.x); const cy=Math.round(tempPos.y); const cz=Math.round(tempPos.z); for(let dx=-r;dx<=r;dx++)for(let dy=-r;dy<=r;dy++)for(let dz=-r;dz<=r;dz++) if(dx*dx+dy*dy+dz*dz<=r*r+0.1) dV(cx+dx,cy+dy,cz+dz,getDrawColor(cx,cy,cz,minX,maxX,minY,maxY,minZ,maxZ,1),matTypes[1]); } }
-                if (wireFill || (clearInterior && isP)) for(const f of faces){ const p1=verts[f[0]], p2=verts[f[1]], p3=verts[f[2]], steps=Math.max(1,Math.ceil(Math.max(p1.distanceTo(p2),p2.distanceTo(p3),p3.distanceTo(p1))*2)); for(let u=0; u<=steps; u++)for(let v=0; v<=steps-u; v++){ const w=steps-u-v, fU=u/steps, fV=v/steps, fW=w/steps, px=Math.round(p1.x*fU+p2.x*fV+p3.x*fW), py=Math.round(p1.y*fU+p2.y*fV+p3.y*fW), pz=Math.round(p1.z*fU+p2.z*fV+p3.z*fW); if (wireFill) dV(px,py,pz,getDrawColor(px,py,pz,minX,maxX,minY,maxY,minZ,maxZ,0),matTypes[0]); else updG(px,py,pz); } }
+                for(const e of edges){ const p1=verts[e[0]], p2=verts[e[1]], steps=Math.max(1,Math.ceil(p1.distanceTo(p2)*2)), r=wireSettings.icosahedron.width-1; for(let i=0; i<=steps; i++){ tempPos.lerpVectors(p1,p2,i/steps); const cx=Math.round(tempPos.x); const cy=Math.round(tempPos.y); const cz=Math.round(tempPos.z); for(let dx=-r;dx<=r;dx++)for(let dy=-r;dy<=r;dy++)for(let dz=-r;dz<=r;dz++) if(dx*dx+dy*dy+dz*dz<=r*r+0.1) dV(cx+dx,cy+dy,cz+dz,getDrawColor(cx,cy,cz,minX,maxX,minY,maxY,minZ,maxZ,1),matTypes[1]); } }
+                if (wireSettings.icosahedron.fill || (clearInterior && isP)) for(const f of faces){ const p1=verts[f[0]], p2=verts[f[1]], p3=verts[f[2]], steps=Math.max(1,Math.ceil(Math.max(p1.distanceTo(p2),p2.distanceTo(p3),p3.distanceTo(p1))*2)); for(let u=0; u<=steps; u++)for(let v=0; v<=steps-u; v++){ const w=steps-u-v, fU=u/steps, fV=v/steps, fW=w/steps, px=Math.round(p1.x*fU+p2.x*fV+p3.x*fW), py=Math.round(p1.y*fU+p2.y*fV+p3.y*fW), pz=Math.round(p1.z*fU+p2.z*fV+p3.z*fW); if (wireSettings.icosahedron.fill) dV(px,py,pz,getDrawColor(px,py,pz,minX,maxX,minY,maxY,minZ,maxZ,0),matTypes[0]); else updG(px,py,pz); } }
             } else {
                 for(const f of faces){ const p1=verts[f[0]], p2=verts[f[1]], p3=verts[f[2]], steps=Math.max(1,Math.ceil(Math.max(p1.distanceTo(p2),p2.distanceTo(p3),p3.distanceTo(p1))*2)); for(let u=0; u<=steps; u++)for(let v=0; v<=steps-u; v++){ const w=steps-u-v, fU=u/steps, fV=v/steps, fW=w/steps, px=Math.round(p1.x*fU+p2.x*fV+p3.x*fW), py=Math.round(p1.y*fU+p2.y*fV+p3.y*fW), pz=Math.round(p1.z*fU+p2.z*fV+p3.z*fW); dV(px,py,pz,getDrawColor(px,py,pz,minX,maxX,minY,maxY,minZ,maxZ,0),matTypes[0]); } }
             }
@@ -6198,12 +6230,12 @@ function executeCylinderTool(startPos, endPos, isPainting) {
                             // Width is measured in voxels across the cross-section,
                             // not scaled by cylinder length or the mean of three radii.
                             if (du * rayU + dv * rayV >= 0 &&
-                                Math.abs(du * rayV - dv * rayU) * cylinderRibInvLen[nearest] <= wireWidth - 0.2) isEdge = true;
+                                Math.abs(du * rayV - dv * rayU) * cylinderRibInvLen[nearest] <= wireSettings.cylinder.width - 0.2) isEdge = true;
                         }
 
                         if (isEdge || (isDivPos && cylinderCap)) {
                             shouldDraw = true; drawColor = getDrawColor(gx, gy, gz, loopMinX, loopMaxX, loopMinY, loopMaxY, loopMinZ, loopMaxZ, 1); drawMat = matTypes[1];
-                        } else if (wireFill) {
+                        } else if (wireSettings.cylinder.fill) {
                             shouldDraw = true; if (!cylinderCap && isCap) shouldDraw = false;
                         }
                     } else if (clearInterior && isPainting) setVoxel(gx, gy, gz, false, null);
@@ -6272,8 +6304,8 @@ function executeTorusTool(startPos, endPos, isPainting) {
     // Torus division FIX: calculate a true voxel-space perpendicular distance
     // to each division ray. The old angular difference * mean radius produced
     // stretched/thickened bands on scaled and elliptic rings.
-    const ringBandThresh = (isWire ? Math.max(wireWidth, torusDivThick) : torusDivThick) * 0.55;
-    const tubeBandThresh = isWire ? Math.max(0.35, wireWidth - 0.15) : torusDivThick * 0.55;
+    const ringBandThresh = (isWire ? Math.max(wireSettings.torus.width, torusDivThick) : torusDivThick) * 0.55;
+    const tubeBandThresh = isWire ? Math.max(0.35, wireSettings.torus.width - 0.15) : torusDivThick * 0.55;
     const ringStepAngle = torusDivs > 1 ? sweepRad / torusDivs : 0;
     const tubeStepAngle = 2 * Math.PI / torusTubeDivs;
 
@@ -6444,10 +6476,10 @@ function executeTorusTool(startPos, endPos, isPainting) {
                         const corner = Math.round(shiftedPhi / sectorAngle);
                         const du = cornerRayU[corner], dv = cornerRayV[corner];
                         isRib = worldU * du + worldV * dv >= 0 &&
-                            Math.abs(worldU * dv - worldV * du) * cornerRayInvLen[corner] <= wireWidth - 0.2;
+                            Math.abs(worldU * dv - worldV * du) * cornerRayInvLen[corner] <= wireSettings.torus.width - 0.2;
                     }
                     if (isRib) writeTorusVoxel(gx, gy, gz, true);
-                    else if (wireFill) writeTorusVoxel(gx, gy, gz, false);
+                    else if (wireSettings.torus.fill) writeTorusVoxel(gx, gy, gz, false);
                 } else {
                     writeTorusVoxel(gx, gy, gz, isRingDiv || isTubeDiv);
                 }
@@ -6592,11 +6624,11 @@ function executeTorusTool(startPos, endPos, isPainting) {
 
                 let isE = false;
                 if (triangleMode === 'wireframe' && isSurf) {
-                    isE = Math.abs(gw - baseW) < wireWidth;
+                    isE = Math.abs(gw - baseW) < wireSettings.triangle.width;
                     if (!isE) {
                         const nu = (gu - cu) * invRu, nv = (gv - cv) * invRv;
                         const r_scaled = Math.sqrt(nu * nu + nv * nv) * avgRad;
-                        if (r_scaled < wireWidth) {
+                        if (r_scaled < wireSettings.triangle.width) {
                             isE = true;
                         } else {
                             let phi = Math.atan2(nv, nu); if (phi < 0) phi += 2 * Math.PI;
@@ -6604,7 +6636,7 @@ function executeTorusTool(startPos, endPos, isPainting) {
                             const nearest = Math.round(shifted / legStep) * legStep;
                             let diff = Math.abs(shifted - nearest);
                             if (diff > Math.PI) diff = 2 * Math.PI - diff;
-                            if (diff * r_scaled <= (wireWidth - 0.2)) isE = true;
+                            if (diff * r_scaled <= (wireSettings.triangle.width - 0.2)) isE = true;
                         }
                     }
                 }
@@ -6612,7 +6644,7 @@ function executeTorusTool(startPos, endPos, isPainting) {
                 if (triangleMode === 'wireframe') {
                     if (isSurf) {
                         if (isE || isDivV) setVoxel(gx, gy, gz, isPainting, cSec, matTypes[1]);
-                        else if (wireFill) setVoxel(gx, gy, gz, isPainting, cMain, matTypes[0]);
+                        else if (wireSettings.triangle.fill) setVoxel(gx, gy, gz, isPainting, cMain, matTypes[0]);
                     } else {
                         if (isDivV && triangleGridMode === 'internal') setVoxel(gx, gy, gz, isPainting, cSec, matTypes[1]);
                         else if (clearInterior && isPainting) setVoxel(gx, gy, gz, false, null);
@@ -6926,7 +6958,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                         const segCount = Math.max(1, currentPoints.length - 1);
                         if (lastArcPoints.length > 0 && lastArcPoints.length === currentPoints.length) {
                             for (let i = 0; i < segCount; i++) {
-                                drawSheetQuad(lastArcPoints[i], lastArcPoints[i+1], currentPoints[i], currentPoints[i+1], true, brushSize, i / segCount, (i + 1) / segCount);
+                                drawSheetQuad(lastArcPoints[i], lastArcPoints[i+1], currentPoints[i], currentPoints[i+1], true, lineRadius(), i / segCount, (i + 1) / segCount);
                             }
                         } else {
                             executeLineTool(leftTargetLocal, rightTargetLocal, true);
@@ -7279,7 +7311,7 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                 if(xrLeft){ 
                     leftTargetLocal.copy(leftPointerPos).addScaledVector(leftDir,0.05); worldGroup.worldToLocal(leftTargetLocal); leftTargetLocal.set(Math.round(leftTargetLocal.x/VOXEL_SIZE)*VOXEL_SIZE,Math.round(leftTargetLocal.y/VOXEL_SIZE)*VOXEL_SIZE,Math.round(leftTargetLocal.z/VOXEL_SIZE)*VOXEL_SIZE); 
                     cursorLeft.position.copy(leftTargetLocal); 
-                    if (brushShape === 'ribbon' && activeTool === 'brush') {
+                    if (strokeSettings.brush.shape === 'ribbon' && activeTool === 'brush') {
                         worldGroup.getWorldQuaternion(tempCursorWQuat).invert();
                         xrLeft.getWorldQuaternion(tempCursorCQuat);
                         cursorLeft.quaternion.copy(tempCursorWQuat).multiply(tempCursorCQuat);
@@ -7293,7 +7325,7 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                     rightTargetLocal.copy(rightPointerPos).addScaledVector(rightDir,0.05); worldGroup.worldToLocal(rightTargetLocal); 
                     rightTargetLocal.set(Math.round(rightTargetLocal.x/VOXEL_SIZE)*VOXEL_SIZE,Math.round(rightTargetLocal.y/VOXEL_SIZE)*VOXEL_SIZE,Math.round(rightTargetLocal.z/VOXEL_SIZE)*VOXEL_SIZE); 
                     cursorRight.position.copy(rightTargetLocal); 
-                    if (brushShape === 'ribbon' && activeTool === 'brush') {
+                    if (strokeSettings.brush.shape === 'ribbon' && activeTool === 'brush') {
                         worldGroup.getWorldQuaternion(tempCursorWQuat).invert();
                         xrRight.getWorldQuaternion(tempCursorCQuat);
                         cursorRight.quaternion.copy(tempCursorWQuat).multiply(tempCursorCQuat);
@@ -7393,7 +7425,7 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                                 if (lastArcPoints.length === currentPoints.length) {
                                     const segCount = Math.max(1, currentPoints.length - 1);
                                     for (let i = 0; i < segCount; i++) {
-                                        drawSheetQuad(lastArcPoints[i], lastArcPoints[i+1], currentPoints[i], currentPoints[i+1], true, brushSize, i / segCount, (i + 1) / segCount);
+                                        drawSheetQuad(lastArcPoints[i], lastArcPoints[i+1], currentPoints[i], currentPoints[i+1], true, lineRadius(), i / segCount, (i + 1) / segCount);
                                     }
                                 }
                                 lastArcPoints = currentPoints.map(p => p.clone());
@@ -7540,7 +7572,7 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                             if (lastArcPoints.length === currentPoints.length) {
                                 const segCount = Math.max(1, currentPoints.length - 1);
                                 for (let i = 0; i < segCount; i++) {
-                                    drawSheetQuad(lastArcPoints[i], lastArcPoints[i+1], currentPoints[i], currentPoints[i+1], false, brushSize, i / segCount, (i + 1) / segCount);
+                                    drawSheetQuad(lastArcPoints[i], lastArcPoints[i+1], currentPoints[i], currentPoints[i+1], false, lineRadius(), i / segCount, (i + 1) / segCount);
                                 }
                             }
                             lastArcPoints = currentPoints.map(p => p.clone());
