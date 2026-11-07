@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo PCVR v4.1 - UI refresh / precision joystick colors
+    VoxTrotBravo v4.2
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -8,153 +8,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo v4.1 · Rob Reynolds</title>
+    <title>VoxTrotBravo v4.2</title>
     <style>
-:root{
-    color-scheme:dark;
-    --bg:#0c1013;
-    --bg2:#121920;
-    --ink:#f2edd8;
-    --muted:#aeb8af;
-    --accent:#ffb45b;
-    --accent2:#8be0ff;
-    --accent3:#b8ef72;
-    --surface:#222a30;
-    --surface2:#313b44;
-    --surface3:#151c22;
-    --line:#6c7b7c;
-    --bevel-hi:#cad6c6;
-    --bevel-lo:#0c1114;
-    --shadow:#06080a;
-    --slot:#44505a;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-    margin:0;
-    overflow:hidden;
-    color:var(--ink);
-    font-family:Consolas,'Lucida Console','Courier New',monospace;
-    background:
-        radial-gradient(circle at top left, rgba(139,224,255,.08), transparent 32%),
-        radial-gradient(circle at bottom right, rgba(255,180,91,.08), transparent 28%),
-        linear-gradient(180deg,var(--bg2),var(--bg));
-}
-canvas{display:block}
-button{font:inherit;border-radius:0}
-.glass-surface{
-    background:
-        linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.08)),
-        linear-gradient(180deg,var(--surface2),var(--surface));
-    border:2px solid var(--line);
-    box-shadow:
-        inset 1px 1px 0 rgba(255,255,255,.11),
-        inset -2px -2px 0 rgba(0,0,0,.32),
-        6px 6px 0 var(--shadow);
-    position:relative;
-}
-.glass-surface::before{
-    content:'';
-    position:absolute;
-    inset:7px;
-    border:1px solid rgba(255,255,255,.06);
-    pointer-events:none;
-}
-#ui-container{position:absolute;top:18px;left:18px;width:350px;z-index:100;pointer-events:auto;overflow:hidden}
-.brand-head{
-    display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:2px solid var(--line);
-    background:
-        linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.1)),
-        repeating-linear-gradient(90deg,#323b43 0,#323b43 10px,#293239 10px,#293239 13px);
-}
-.brand-logo{display:flex;align-items:center;gap:12px}
-.brand-mark{
-    width:48px;height:48px;border:2px solid #f3cc85;
-    background:
-        linear-gradient(180deg,#36414a,#232b32);
-    display:grid;place-items:center;font-size:17px;font-weight:900;letter-spacing:.08em;color:var(--accent);
-    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14), inset -2px -2px 0 rgba(0,0,0,.28), 3px 3px 0 #0b0e11;
-}
-.brand-head h1{margin:0;font-size:16px;letter-spacing:.04em;text-transform:uppercase}
-.brand-head small{display:block;font-size:9px;letter-spacing:.22em;color:var(--accent2)}
-.icon-btn,.drawer-tabs button,.snap-control button,.overlay-action-btn,.tool-tile{
-    position:relative;
-    box-shadow:inset 1px 1px 0 rgba(255,255,255,.11), inset -2px -2px 0 rgba(0,0,0,.28);
-}
-.icon-btn{
-    cursor:pointer;width:34px;height:34px;border:1px solid #909d9d;background:linear-gradient(180deg,#2e3840,#1a2127);color:var(--ink)
-}
-.icon-btn:hover{border-color:var(--accent);color:var(--accent)}
-.ui-content{padding:15px;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.06))}
-.eyebrow,.section-label{color:var(--accent);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.15em}
-.head-sub{font-size:11px;line-height:1.6;color:var(--muted);margin:8px 0 13px}
-.command-rows{display:grid;gap:8px}
-.command{display:grid;grid-template-columns:84px 1fr;gap:8px;align-items:center;color:#d6ddd3;font-size:10px;line-height:1.5}
-.command b{
-    background:linear-gradient(180deg,#141b20,#0e1317);
-    border:1px solid #7a8a8e;border-left:4px solid var(--accent2);text-align:center;font-size:9px;padding:7px 2px;
-    box-shadow:inset 1px 1px 0 rgba(255,255,255,.08), inset -1px -1px 0 rgba(0,0,0,.3)
-}
-.shortcut-foot{font-size:10px;color:var(--muted);line-height:1.6;margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
-.shortcut-foot strong{color:var(--accent3)}
-#ui-container.compact .ui-content{display:none}
-#workspace-status{position:absolute;top:18px;right:18px;padding:13px 16px;min-width:236px;z-index:95;pointer-events:none}
-.status-heading{display:flex;justify-content:space-between;gap:12px;font-size:10px;color:var(--muted);letter-spacing:.14em}
-.status-heading span:last-child{color:var(--accent2)}
-.status-value{font-size:28px;font-weight:800;line-height:1.35;font-variant-numeric:tabular-nums;color:var(--ink);text-shadow:2px 2px 0 rgba(0,0,0,.35)}
-.status-detail{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;letter-spacing:.12em}
-#tools-drawer{position:absolute;top:105px;right:18px;width:326px;max-height:calc(100vh - 225px);overflow:auto;padding:14px;z-index:101}
-#tools-drawer[hidden]{display:none}
-.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.drawer-head h2{font-size:13px;color:var(--accent);margin:0;letter-spacing:.12em}
-.drawer-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
-.drawer-tabs button,.snap-control button,.overlay-action-btn,.tool-tile{
-    cursor:pointer;background:linear-gradient(180deg,#313b44,#1b2329);color:var(--ink);border:1px solid #79888b
-}
-.drawer-tabs button{padding:10px 4px;font-size:10px;color:var(--muted)}
-.drawer-tabs button.active,.snap-control button.active{
-    background:linear-gradient(180deg,#6a5337,#4e3c27);border-color:#ffd898;color:#fff4d5;font-weight:900
-}
-#desktop-tool-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.tool-tile{text-align:left;font-size:11px;min-height:52px;padding:8px 9px;border-left:4px solid var(--accent2)}
-.tool-tile[hidden]{display:none}
-.tool-tile:hover{border-color:var(--accent);background:linear-gradient(180deg,#3a454f,#232c33)}
-.tool-tile.active{background:linear-gradient(180deg,#6a5337,#4e3c27);border-color:#ffd492}
-.tool-tile small{display:block;color:var(--muted);margin-top:3px;font-size:9px;letter-spacing:.1em}
-.drawer-note{font-size:10px;line-height:1.5;color:var(--muted);margin:12px 0}
-.section-label{margin:15px 0 9px}
-.snap-control{display:flex;gap:6px}
-.snap-control button{flex:1;padding:9px 5px}
-#file-controls-overlay{position:absolute;bottom:83px;left:50%;transform:translateX(-50%);display:flex;gap:7px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 24px);padding:7px;z-index:1001;pointer-events:auto}
-.overlay-action-btn{font-size:11px;padding:12px 14px;font-weight:800;white-space:nowrap;text-transform:uppercase;letter-spacing:.08em}
-.overlay-action-btn:hover{border-color:var(--accent);background:linear-gradient(180deg,#3a454f,#232c33)}
-#save-button-overlay{background:linear-gradient(180deg,#2e4a37,#203328)}
-#load-button-overlay{background:linear-gradient(180deg,#2f4452,#1f2f39)}
-#folder-button-overlay{background:linear-gradient(180deg,#6a5337,#4e3c27)}
-#tool-drawer-toggle{background:linear-gradient(180deg,#4a3d59,#342842);border-color:#8f7aa5}
-.dock-mark{font-size:9px;font-weight:900;letter-spacing:.18em;color:var(--accent2);padding:0 7px;display:flex;align-items:center}
-#loading-overlay{
-    position:absolute;inset:0;
-    background:
-        radial-gradient(circle at 50% 20%, rgba(139,224,255,.08), transparent 26%),
-        linear-gradient(180deg,#151c22,#090d10);
-    color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity .4s
-}
-#loading-overlay h2{font-size:28px;margin:0;text-transform:uppercase;letter-spacing:.06em}
-#loading-overlay p{color:var(--accent);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
-.spinner{height:38px;width:38px;border:3px solid #3d4d58;border-top-color:var(--accent2);border-radius:50%;margin-top:20px;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:750px){
-    #ui-container{top:8px;left:8px;width:268px}
-    .brand-head{padding:9px}.brand-head h1{font-size:13px}.brand-mark{width:40px;height:40px;font-size:14px}
-    .ui-content{padding:10px}
-    #workspace-status{top:8px;right:8px;min-width:148px;padding:8px}
-    .status-value{font-size:19px}
-    #tools-drawer{top:80px;right:8px;max-height:60vh}
-    #file-controls-overlay{width:calc(100vw - 18px);bottom:74px}
-    .overlay-action-btn{font-size:10px;padding:8px}
-    .dock-mark{display:none}
-}
+:root{color-scheme:dark;--ink:#f0e8d3;--muted:#aeb8ac;--accent:#ffb064;--accent2:#b4e58b;--surface:#1b2521;--line:#56685a}
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111715;color:var(--ink);font-family:Consolas,'Lucida Console',monospace}canvas{display:block}button{font:inherit}
+.glass-surface{background:var(--surface);border:2px solid #59685f;box-shadow:4px 5px 0 #0c1310}
+#ui-container{position:absolute;top:18px;left:18px;width:336px;z-index:100;pointer-events:auto;overflow:hidden}
+.brand-head{display:flex;align-items:center;justify-content:space-between;padding:15px;border-bottom:2px solid #59685f;background:repeating-linear-gradient(90deg,#29362f 0,#29362f 7px,#222e27 7px,#222e27 9px)}
+.brand-logo{display:flex;align-items:center;gap:10px}.brand-mark{width:42px;height:42px;border:2px solid var(--accent);background:#1b2821;display:grid;place-items:center;font-size:26px;font-weight:900;color:var(--accent)}
+.brand-head h1{margin:0;font-size:14px;letter-spacing:.03em}.brand-head small{font-size:9px;letter-spacing:.18em;color:var(--muted)}
+.icon-btn{cursor:pointer;width:33px;height:33px;border:1px solid #72816f;background:#172019;color:var(--ink)}.icon-btn:hover{border-color:var(--accent)}
+.ui-content{padding:15px}.eyebrow,.section-label{color:var(--accent);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.15em}.head-sub{font-size:11px;line-height:1.6;color:var(--muted);margin:8px 0 13px}.command-rows{display:grid;gap:8px}.command{display:grid;grid-template-columns:84px 1fr;gap:8px;align-items:center;color:#d0d8c9;font-size:10px;line-height:1.5}.command b{background:#111b15;border:1px solid #677968;border-left:3px solid var(--accent);text-align:center;font-size:9px;padding:7px 2px}.shortcut-foot{font-size:10px;color:var(--muted);line-height:1.6;margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}.shortcut-foot strong{color:var(--accent2)}#ui-container.compact .ui-content{display:none}
+#workspace-status{position:absolute;top:18px;right:18px;padding:13px 16px;min-width:228px;z-index:95;pointer-events:none}.status-heading{display:flex;justify-content:space-between;gap:12px;font-size:10px;color:var(--muted)}.status-heading span:last-child{color:var(--accent2)}.status-value{font-size:27px;font-weight:800;line-height:1.4;font-variant-numeric:tabular-nums}.status-detail{display:flex;justify-content:space-between;color:var(--muted);font-size:10px}
+#tools-drawer{position:absolute;top:105px;right:18px;width:322px;max-height:calc(100vh - 225px);overflow:auto;padding:14px;z-index:101}#tools-drawer[hidden]{display:none}.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.drawer-head h2{font-size:13px;color:var(--accent);margin:0}.drawer-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}.drawer-tabs button{cursor:pointer;background:#151f19;color:var(--muted);border:1px solid #5c6e61;padding:10px 4px;font-size:10px}.drawer-tabs button.active{background:var(--accent);border-color:#ffdfa0;color:#161e17;font-weight:900}#desktop-tool-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tool-tile{text-align:left;cursor:pointer;border:1px solid #5d7060;border-left:3px solid #8a927a;background:#19261d;color:var(--ink);font-size:11px;min-height:49px;padding:8px}.tool-tile[hidden]{display:none}.tool-tile:hover{border-color:var(--accent);background:#38352a}.tool-tile.active{background:#5a462c;border-color:#ffd492}.tool-tile small{display:block;color:var(--muted);margin-top:3px;font-size:9px}.drawer-note{font-size:10px;line-height:1.5;color:var(--muted);margin:12px 0}.section-label{margin:15px 0 9px}.snap-control{display:flex;gap:6px}.snap-control button{flex:1;cursor:pointer;border:1px solid #7a8871;background:#18241b;color:var(--ink);padding:9px 5px}.snap-control button.active{background:var(--accent);color:#1b261c;font-weight:900}
+#file-controls-overlay{position:absolute;bottom:83px;left:50%;transform:translateX(-50%);display:flex;gap:7px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 24px);padding:7px;z-index:1001;pointer-events:auto}.overlay-action-btn{cursor:pointer;background:#27362e;border:1px solid #74826c;color:var(--ink);font-size:11px;padding:12px 14px;font-weight:800;white-space:nowrap}.overlay-action-btn:hover{border-color:var(--accent);background:#473d2d}#save-button-overlay{background:#2e4830}#load-button-overlay{background:#283a34}#folder-button-overlay{background:#493727}#tool-drawer-toggle{background:#563c23;border-color:#b58b51}.dock-mark{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--accent);padding:0 6px}
+#loading-overlay{position:absolute;inset:0;background:#131d17;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity .4s}#loading-overlay h2{font-size:25px;margin:0}#loading-overlay p{color:var(--accent);font-size:12px}.spinner{height:37px;width:37px;border:3px solid #405546;border-top-color:var(--accent);border-radius:50%;margin-top:20px;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:750px){#ui-container{top:8px;left:8px;width:260px}.brand-head{padding:9px}.brand-head h1{font-size:12px}.ui-content{padding:10px}#workspace-status{top:8px;right:8px;min-width:140px;padding:8px}.status-value{font-size:19px}#tools-drawer{top:80px;right:8px;max-height:60vh}#file-controls-overlay{width:calc(100vw - 18px);bottom:74px}.overlay-action-btn{font-size:10px;padding:8px}.dock-mark{display:none}}
+/* ABS enclosure, recessed LCD and two-shot keycaps */
+:root{color-scheme:light;--surface:#d6d0bc;--ink:#25292a;--muted:#484b47;--accent:#873b27;--accent2:#373d2b;--line:#8a877a}
+body{font-family:Arial,Helvetica,sans-serif}
+.glass-surface{border:3px solid;border-color:#f1ead6 #777773 #676866 #e9e2ce;box-shadow:3px 4px 0 #343638,6px 7px 0 #151819;background:var(--surface)}
+.brand-head{border-bottom:4px solid #777872;background:#c8c2b3;padding:15px 12px}
+.brand-head h1{font:italic 900 23px/1 Arial,sans-serif;letter-spacing:-1.4px}
+.brand-head small{display:inline-block;color:#692733;font:700 11px/1 monospace;letter-spacing:0}
+.brand-mark{width:35px;height:31px;border:0;background:linear-gradient(90deg,#793443 0 31%,#c16036 31% 66%,#e1a94b 66%);clip-path:polygon(0 0,100% 0,100% 35%,82% 35%,82% 67%,65% 67%,65% 100%,35% 100%,35% 67%,18% 67%,18% 35%,0 35%)}
+.eyebrow{margin-bottom:12px}.command{color:var(--ink);font:12px/1.35 Arial,sans-serif}.command b,.icon-btn,.drawer-tabs button,.snap-control button,.tool-tile,.overlay-action-btn,#save-button-overlay,#load-button-overlay,#folder-button-overlay,#tool-drawer-toggle,#xr-launch button{background:#41464a;color:#fff9e6;border:2px solid;border-color:#72777a #202426 #1c2022 #666c70;box-shadow:0 2px 0 #292c2e;font:700 12px/1.2 Arial,sans-serif}
+.command b{font-family:monospace}.tool-tile small{color:#e0dbca}.tool-tile:hover,.overlay-action-btn:hover,#xr-launch button:hover:enabled{background:#55595c}.tool-tile.active,.drawer-tabs button.active,.snap-control button.active,#tool-drawer-toggle{background:#813c48;color:#fff6de;border-color:#aa626b #51262e #51262e #aa626b}
+button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
+#workspace-status{background:#b4be94;border-width:7px;border-color:#777975 #aaa99d #cfcdba #777975;color:#273728;font-family:monospace}.status-heading,.status-detail,.status-heading span:last-child{color:#354432}
+#ui-container:after{display:block;content:"";height:8px;margin:0 15px 10px;background:repeating-linear-gradient(90deg,#605f56 0 4px,#f1e9d4 4px 6px,transparent 6px 11px)}
+#file-controls-overlay{width:max-content;align-items:center;bottom:80px}
+#xr-launch{position:absolute;z-index:1002;bottom:12px;left:50%;transform:translateX(-50%);text-align:center;width:max-content;max-width:96vw}
+#xr-launch button{padding:9px 18px;cursor:pointer}#xr-launch button:disabled{color:#ccc8be;background:#373a3b;cursor:default}
+#session-status{display:block;margin:4px auto 0;width:fit-content;max-width:96vw;background:#272929;color:#eee9dc;font:12px/1.3 Arial,sans-serif}
+#loading-overlay{background:#cec8b8}.spinner{border-radius:0;border-color:#aaa796;border-top-color:#89394b}
+@media(max-width:570px){#ui-container{max-width:57vw}.brand-head{gap:4px;padding:6px}.brand-head h1{font-size:15px}.brand-mark{width:19px;height:20px}.brand-logo{gap:4px}.command{grid-template-columns:65px 1fr;font-size:10px}.command b{font-size:10px}#workspace-status{min-width:0;width:37vw}.status-heading,.status-detail{flex-wrap:wrap}.status-value{font-size:16px}#tools-drawer{max-width:94vw}#file-controls-overlay{width:95vw;bottom:86px}.overlay-action-btn{padding:6px}}
 </style>
     <script type="importmap">
         {
@@ -167,14 +55,14 @@ button{font:inherit;border-radius:0}
 </head>
 <body>
     <div id="loading-overlay">
-        <h2>VoxTrotBravo v4.1</h2>
-        <p>Loading voxel modules…</p>
+        <h2>VoxTrotBravo v4.2</h2>
+        <p>Preparing studio…</p>
         <div class="spinner"></div>
     </div>
 
     <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
-        <div class="brand-head"><div class="brand-logo"><div class="brand-mark">VTB</div><div><small>PCVR VOXEL STUDIO</small><h1>VoxTrotBravo <span style="color:#ffb45b">v4.1</span></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
-        <div class="ui-content"><div class="eyebrow">Controller quick guide</div><p class="head-sub">Work in four steps: choose a tool, tune its controls, pick materials, then manage the workspace.</p>
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.2</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="ui-content"><div class="eyebrow">Controller quick guide</div>
             <div class="command-rows">
                 <div class="command"><b>A · Right</b><span>Current tool settings / rotate</span></div>
                 <div class="command"><b>B · Right</b><span>Material and color controls</span></div>
@@ -183,24 +71,25 @@ button{font:inherit;border-radius:0}
                 <div class="command"><b>Triggers</b><span>Right to draw/select · left to erase/drop</span></div>
                 <div class="command"><b>Grips</b><span>Move, scale and rotate the world</span></div>
             </div>
-            <div class="shortcut-foot"><strong>Precision:</strong> Click either thumbstick to switch its color axis between Hue and Saturation. Horizontal = Hue/Saturation; Vertical = Lightness. Color locks are in B / Materials. Right stick still scales Free Transform selections. Rotation snapping: 1°, 5°, or 15°.<br>© 2024–2026 Rob Reynolds. All rights reserved.</div>
+            <div class="shortcut-foot"><strong>Precision:</strong> Tap 1°, 5°, or 15° in Select options or the Studio panel. Exact rotation nudges are available on A.<br>© 2024–2026 Rob Reynolds. All rights reserved.</div>
         </div>
     </section>
-    <section id="workspace-status" class="glass-surface" aria-label="Project statistics"><div class="status-heading"><span>LIVE GRID</span><span id="hud-current-tool">BRUSH</span></div><div class="status-value" id="hud-voxels">0</div><div class="status-detail"><span>VOXELS</span><span id="hud-perf">READY</span></div></section>
-    <aside id="tools-drawer" class="glass-surface" hidden aria-label="Desktop tool library"><div class="drawer-head"><h2>Module deck</h2><button id="close-tool-drawer" class="icon-btn" aria-label="Close tool library">×</button></div><div id="desktop-tool-tabs" class="drawer-tabs"><button data-tool-page="mark">01 MARK</button><button data-tool-page="build">02 FORMS</button><button data-tool-page="edit">03 EDIT</button></div><div id="desktop-tool-list"></div><p class="drawer-note">In VR: X selects tools, A opens current options, B opens materials, Y opens global controls. Recently used tools stay available in EDIT.</p><div class="section-label">Rotation snapping</div><div id="desktop-snap-controls" class="snap-control"><button data-rot-snap="1" class="active">1°</button><button data-rot-snap="5">5°</button><button data-rot-snap="15">15°</button></div></aside>
+    <section id="workspace-status" class="glass-surface" aria-label="Project statistics"><div class="status-heading"><span>LIVE WORKSPACE</span><span id="hud-current-tool">BRUSH</span></div><div class="status-value" id="hud-voxels">0</div><div class="status-detail"><span>VOXELS</span><span id="hud-perf">READY</span></div></section>
+    <aside id="tools-drawer" class="glass-surface" hidden aria-label="Desktop tool library"><div class="drawer-head"><h2>Tool library</h2><button id="close-tool-drawer" class="icon-btn" aria-label="Close tool library">×</button></div><div id="desktop-tool-tabs" class="drawer-tabs"><button data-tool-page="mark">01 MARK</button><button data-tool-page="build">02 FORMS</button><button data-tool-page="edit">03 EDIT</button></div><div id="desktop-tool-list"></div><p class="drawer-note">In VR: X to choose, A for options, B for materials, Y for global controls. Recently used tools are accessible from EDIT.</p><div class="section-label">Rotation snapping</div><div id="desktop-snap-controls" class="snap-control"><button data-rot-snap="1" class="active">1°</button><button data-rot-snap="5">5°</button><button data-rot-snap="15">15°</button></div></aside>
     <div id="file-controls-overlay" class="glass-surface" role="toolbar" aria-label="Project file controls">
-        <span class="dock-mark">VTB // DATA DECK</span>
+        <span class="dock-mark">PROJECT</span>
         <button id="save-button-overlay" class="overlay-action-btn">Save .VTB</button>
         <button id="load-button-overlay" class="overlay-action-btn">Open .VTB</button>
         <button id="folder-button-overlay" class="overlay-action-btn" title="Grant folder access before entering VR to read/write project files directly">Link folder</button>
         <button id="export-button-overlay" class="overlay-action-btn">Export .OBJ</button>
-        <button id="tool-drawer-toggle" class="overlay-action-btn" title="Open desktop tool library">Tools / Snap</button>
+        <button id="tool-drawer-toggle" class="overlay-action-btn" title="Open desktop tool library">Tools / snap</button>
         <input type="file" id="vtb-file-input" accept=".vtb" style="display:none" />
     </div>
 
+    <div id="xr-launch"><button id="launch-vr" disabled>Enter VR</button> <button id="launch-ar" disabled>Enter passthrough</button><output id="session-status" aria-live="polite"></output></div>
     <script type="module">
         import * as THREE from 'three';
-        import { VRButton } from 'three/addons/webxr/VRButton.js';
+
 
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -271,7 +160,7 @@ button{font:inherit;border-radius:0}
             {id:'extrude',name:'Extrude',kind:'Sculpt'},
             {id:'line',name:'Line / Arc',kind:'Draw'},
             {id:'paint',name:'Paint',kind:'Color'},
-            {id:'sculpt',name:'Soft Sculpt',kind:'Sculpt'},
+            {id:'sculpt',name:'Spray Brush',kind:'Sculpt'},
             {id:'plane',name:'Plane',kind:'Shape'},
             {id:'box',name:'Box',kind:'Shape'},
             {id:'quadsphere',name:'Quad Sphere',kind:'Shape'},
@@ -306,7 +195,7 @@ button{font:inherit;border-radius:0}
         let rightTriggerValue = 0; // New: tracking trigger pressure
         let leftTriggerValue = 0; // New: tracking trigger pressure 
 
-        // Soft Sculpt config
+        // Spray Brush config
         let sculptSize = 3;
         let sculptDensity = 5;
         let sculptPressureMode = false; // New: optional pressure mode for sculpt
@@ -460,51 +349,9 @@ button{font:inherit;border-radius:0}
             [new THREE.Color(0x00ffcc), new THREE.Color(0xffff00)]  
         ];
         
-        // Each of the four material colors owns its own HSL intent.
-        // This prevents color loss when a color reaches black/white/gray and
-        // when a different joystick is assigned to the same color later.
-        const colorControl = slotColors.flatMap(pair => pair.map(color => {
-            const hsl = color.getHSL({ h: 0, s: 0, l: 0 });
-            return { h: hsl.h, s: hsl.s, l: hsl.l, hueLock: false, lightLock: false };
-        }));
-        // index 0 = LEFT hand, 1 = RIGHT hand; click thumbstick to switch.
-        const joystickModes = ['hue', 'hue'];
-        const lastThumbstickPressed = [false, false];
-        let lastJoystickFrameTime = 0;
-        const JOYSTICK_DEADZONE = 0.15;
-        const HUE_RATE = 0.36;   // cycles per second at full deflection
-        const SAT_RATE = 0.70;   // saturation units per second
-        const LIGHT_RATE = 0.70; // lightness units per second
-
-        function wrapHue(h) { return ((h % 1) + 1) % 1; }
-        function applyControlledColor(index) {
-            const c = colorControl[index];
-            slotColors[index >> 1][index & 1].setHSL(c.h, c.s, c.l);
-        }
-        function syncColorControlFromColor(slot, sub, preserveAchromatic = true) {
-            const c = colorControl[slot * 2 + sub];
-            slotColors[slot][sub].getHSL(tempHSL);
-            // At black or white the RGB representation cannot reveal the
-            // original hue/saturation. Preserve that information when sampling.
-            if (tempHSL.s > 0.00001 || !preserveAchromatic) c.h = tempHSL.h;
-            if (tempHSL.s > 0.00001 || !preserveAchromatic || (tempHSL.l > 0.00001 && tempHSL.l < 0.99999)) c.s = tempHSL.s;
-            c.l = tempHSL.l;
-        }
-        function joystickResponse(raw) {
-            const magnitude = Math.abs(raw);
-            if (magnitude <= JOYSTICK_DEADZONE) return 0;
-            const t = Math.min(1, (magnitude - JOYSTICK_DEADZONE) / (1 - JOYSTICK_DEADZONE));
-            // Subtle center movements give fine control; full deflection is fast.
-            const curve = 0.06 * t + 0.94 * t * t * t;
-            return raw < 0 ? -curve : curve;
-        }
-        function toggleJoystickMode(handIndex) {
-            joystickModes[handIndex] = joystickModes[handIndex] === 'hue' ? 'sat' : 'hue';
-            colorMenuNeedsUpdate = true;
-            showColorFeedback(true);
-        }
-
-        let joyLTarget = 1;
+        const joystickTracker = [ {h: 0.55, s: 1.0}, {h: 0.95, s: 1.0} ]; 
+        
+        let joyLTarget = 1; 
         let joyRTarget = 0;
 
         let shiftProgress = 0;
@@ -741,7 +588,8 @@ button{font:inherit;border-radius:0}
 
         const renderer = new THREE.WebGLRenderer({ 
             canvas: canvas, 
-            context: gl, 
+            ...(gl ? {context: gl} : {}),
+            alpha: true, 
             antialias: false, 
             powerPreference: "high-performance" 
         });
@@ -749,20 +597,89 @@ button{font:inherit;border-radius:0}
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
 
-        document.body.appendChild(VRButton.createButton(renderer));
+        const xrButtons = new Map([
+            ['immersive-vr', document.getElementById('launch-vr')],
+            ['immersive-ar', document.getElementById('launch-ar')]
+        ]);
+        const sessionStatus = document.getElementById('session-status');
+        const supportedModes = new Set();
+        let activeSession = null, activeMode = null, requesting = false;
+        const studioBackground = scene.background;
+        function refreshLaunchButtons() {
+            for (const [mode, button] of xrButtons) {
+                const name = mode === 'immersive-ar' ? 'passthrough' : 'VR';
+                button.disabled = requesting || !supportedModes.has(mode) || (!!activeSession && activeMode !== mode);
+                button.textContent = (activeMode === mode ? 'Exit ' : 'Enter ') + name;
+            }
+        }
+        let detection = 0;
+        async function detectModes() {
+            const revision = ++detection;
+            const available = await Promise.all([...xrButtons.keys()].map(async mode => {
+                try { return await navigator.xr?.isSessionSupported(mode) ? mode : null; }
+                catch { return null; }
+            }));
+            if (revision !== detection) return;
+            supportedModes.clear();
+            available.filter(Boolean).forEach(mode => supportedModes.add(mode));
+            refreshLaunchButtons();
+            if (!activeSession && !requesting) sessionStatus.textContent = !window.isSecureContext ?
+                'Open over HTTPS or localhost for XR.' : !supportedModes.has('immersive-ar') ?
+                'Passthrough unavailable here. Try Quest Browser.' : '';
+        }
+        function restoreStudio() {
+            scene.background = studioBackground;
+            studioMesh.visible = true;
+            gridHelper.visible = true;
+            activeSession = activeMode = null;
+            refreshLaunchButtons();
+        }
+        for (const [mode, button] of xrButtons) {
+            button.addEventListener('click', async () => {
+                if (requesting) return;
+                requesting = true;
+                refreshLaunchButtons();
+                let session;
+                try {
+                    if (activeSession) { await activeSession.end(); return; }
+                    session = await navigator.xr.requestSession(mode, {
+                        requiredFeatures: ['local-floor'],
+                        optionalFeatures: ['bounded-floor']
+                    });
+                    if (mode === 'immersive-ar' && session.environmentBlendMode === 'opaque')
+                        throw new Error('This runtime supplies an opaque view. Try Quest Browser.');
+                    activeSession = session;
+                    activeMode = mode;
+                    session.addEventListener('end', restoreStudio, {once:true});
+                    if (mode === 'immersive-ar') {
+                        scene.background = null;
+                        renderer.setClearColor(0x000000, 0);
+                        studioMesh.visible = gridHelper.visible = false;
+                    }
+                    await renderer.xr.setSession(session);
+                    sessionStatus.textContent = '';
+                } catch (error) {
+                    if (session) { try { await session.end(); } catch {} restoreStudio(); }
+                    sessionStatus.textContent = error.message || 'Session could not start.';
+                } finally {
+                    requesting = false;
+                    refreshLaunchButtons();
+                }
+            });
+        }
+        navigator.xr?.addEventListener('devicechange', detectModes);
+        detectModes();
 
         // --- Quest 3 PCVR Specific Optimizations ---
         renderer.xr.addEventListener('sessionstart', () => {
             const session = renderer.xr.getSession();
             if (session) {
-                if (session.renderState.baseLayer) {
-                    session.renderState.baseLayer.fixedFoveation = 1; 
-                }
+                renderer.xr.setFoveation(1);
                 if (session.supportedFrameRates) {
                     // Target 90Hz when available: 11.1 ms per frame rather than 8.3 ms at 120Hz.
                     // Retain the runtime-selected refresh rate on other headsets.
                     if (session.supportedFrameRates.includes(90)) {
-                        session.updateTargetFrameRate(90).catch(console.warn);
+                        session.updateTargetFrameRate?.(90)?.catch(console.warn);
                     }
                 }
             }
@@ -804,7 +721,21 @@ button{font:inherit;border-radius:0}
         pmremGenerator.dispose();
         
         const studioGeo = new THREE.BoxGeometry(200, 200, 200);
-        const studioMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1.0, side: THREE.BackSide });
+        // Molded panels on the existing studio shell. One static texture and one unlit draw.
+        const casingCanvas = document.createElement('canvas');
+        casingCanvas.width = casingCanvas.height = 128;
+        const casing = casingCanvas.getContext('2d');
+        casing.fillStyle = '#34383a'; casing.fillRect(0, 0, 128, 128);
+        casing.fillStyle = '#414546'; casing.fillRect(1, 1, 126, 126);
+        casing.fillStyle = '#3d4142'; casing.fillRect(2, 2, 125, 125);
+        casing.fillStyle = '#35393a';
+        for (let x = 10; x < 36; x += 4) casing.fillRect(x, 115, 2, 5);
+        casing.fillStyle = '#70574a'; casing.fillRect(111, 8, 8, 2);
+        const casingTexture = new THREE.CanvasTexture(casingCanvas);
+        casingTexture.colorSpace = THREE.SRGBColorSpace;
+        casingTexture.wrapS = casingTexture.wrapT = THREE.RepeatWrapping;
+        casingTexture.repeat.set(64, 64);
+        const studioMat = new THREE.MeshBasicMaterial({map: casingTexture, side: THREE.BackSide});
         const studioMesh = new THREE.Mesh(studioGeo, studioMat);
         studioMesh.position.y = 100 - (VOXEL_SIZE / 2) - 0.01; 
         studioMesh.matrixAutoUpdate = false; studioMesh.updateMatrix();
@@ -854,6 +785,18 @@ button{font:inherit;border-radius:0}
         const ptMetal = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, map: perfTex, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
         const perfMaterials = [ptSolid, ptGlass, ptEmission, ptMetal];
 
+        // A culled mesh can miss several uploads. Retain one encompassing range until Three consumes it.
+        function queueAttributeRange(attribute, offset, count) {
+            let end = offset + count;
+            for (const pending of attribute.updateRanges) {
+                offset = Math.min(offset, pending.start);
+                end = Math.max(end, pending.start + pending.count);
+            }
+            attribute.clearUpdateRanges();
+            attribute.addUpdateRange(offset, end - offset);
+            attribute.needsUpdate = true;
+        }
+
         class ChunkLayer {
             constructor(cx, cy, cz, matType) {
                 this.matType = matType;
@@ -872,7 +815,7 @@ button{font:inherit;border-radius:0}
                 this.mesh.instanceColor = new THREE.InstancedBufferAttribute(new Uint8Array(this.capacity * 3), 3, true);
                 this.mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
                 this.mesh.count = 0;
-                this.mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3((cx * CHUNK_SIZE + CHUNK_SIZE / 2), (cy * CHUNK_SIZE + CHUNK_SIZE / 2), (cz * CHUNK_SIZE + CHUNK_SIZE / 2)), CHUNK_SIZE * 0.87);
+                this.mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3((cx * CHUNK_SIZE + (CHUNK_SIZE - 1) / 2), (cy * CHUNK_SIZE + (CHUNK_SIZE - 1) / 2), (cz * CHUNK_SIZE + (CHUNK_SIZE - 1) / 2)), CHUNK_SIZE * 0.87);
                 worldGroup.add(this.mesh);
 
                 this.ptsPos = new Float32Array(this.capacity * 3);
@@ -889,7 +832,7 @@ button{font:inherit;border-radius:0}
 
                 this.voxelToIndex = new Uint16Array(CHUNK_VOL);
                 this.voxelToIndex.fill(65535); 
-                this.indexToLocal = new Uint16Array(CHUNK_VOL); 
+                this.indexToLocal = new Uint16Array(this.capacity); 
                 this.needsUpdate = false;
                 this.geometryDirty = false;
                 this.colorDirty = false;
@@ -918,7 +861,7 @@ button{font:inherit;border-radius:0}
                     this.mesh.instanceColor.array.set(oldMesh.instanceColor.array.subarray(0, this.count * 3));
                     this.ptsPos.set(oldPtsPos.subarray(0, this.count * 3));
                     this.dirtyMin = 0;
-                    if (this. count - 1 > this.dirtyMax) this.dirtyMax = this.count - 1;
+                    if (this.count - 1 > this.dirtyMax) this.dirtyMax = this.count - 1;
                     this.needsUpdate = true;
                     this.geometryDirty = true;
                     this.colorDirty = true;
@@ -943,6 +886,9 @@ button{font:inherit;border-radius:0}
                 worldGroup.remove(oldPtsMesh); worldGroup.add(this.pointsMesh);
                 oldPtsMesh.geometry.dispose();
 
+                const indices = new Uint16Array(newCapacity);
+                indices.set(this.indexToLocal.subarray(0, this.count));
+                this.indexToLocal = indices;
                 this.capacity = newCapacity;
             }
             addVoxel(localIdx, gx, gy, gz, color) {
@@ -1028,26 +974,16 @@ button{font:inherit;border-radius:0}
             updateBuffers() {
                 if (this.needsUpdate) {
                     if (this.dirtyMin <= this.dirtyMax) {
-                        const setSingleFrameRange = (attr, offset, count) => {
-                            if (attr.updateRanges) {
-                                // Three.js r160 does not auto-clear updateRanges after gl.bufferSubData;
-                                // since flushDirtyChunks() runs once per frame right before render, set exact span.
-                                attr.clearUpdateRanges();
-                                attr.addUpdateRange(offset, count);
-                            }
-                            attr.needsUpdate = true;
-                        };
-
                         const countItems = this.dirtyMax - this.dirtyMin + 1;
                         if (renderMode === 'standard') {
                             // Recoloring existing voxels updates only RGB; never upload 64-byte
                             // instance matrices when all positions are unchanged.
-                            if (this.geometryDirty) setSingleFrameRange(this.mesh.instanceMatrix, this.dirtyMin * 16, countItems * 16);
-                            if (this.colorDirty) setSingleFrameRange(this.mesh.instanceColor, this.dirtyMin * 3, countItems * 3);
+                            if (this.geometryDirty) queueAttributeRange(this.mesh.instanceMatrix, this.dirtyMin * 16, countItems * 16);
+                            if (this.colorDirty) queueAttributeRange(this.mesh.instanceColor, this.dirtyMin * 3, countItems * 3);
                             this.pointsStale = true;
                         } else {
-                            if (this.geometryDirty) setSingleFrameRange(this.pointsMesh.geometry.attributes.position, this.dirtyMin * 3, countItems * 3);
-                            if (this.colorDirty) setSingleFrameRange(this.pointsMesh.geometry.attributes.color, this.dirtyMin * 3, countItems * 3);
+                            if (this.geometryDirty) queueAttributeRange(this.pointsMesh.geometry.attributes.position, this.dirtyMin * 3, countItems * 3);
+                            if (this.colorDirty) queueAttributeRange(this.pointsMesh.geometry.attributes.color, this.dirtyMin * 3, countItems * 3);
                             this.meshStale = true;
                         }
                     }
@@ -1937,49 +1873,51 @@ function updatePlanePreview(start, end, isPainting) {
         xrRight = controller0; xrLeft = controller1; gripRight = grip0; gripLeft = grip1;
 
         const raycaster = new THREE.Raycaster();
+        const menuHits = [];
+        function menuHitTest(menu) {
+            menuHits.length = 0;
+            raycaster.intersectObject(menu, false, menuHits);
+            return menuHits;
+        }
+
         
         const leftLaserLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
         leftLaserLine.scale.z = 5; leftLaserLine.visible = false; xrLeft.add(leftLaserLine);
         const rightLaserLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
         rightLaserLine.scale.z = 5; rightLaserLine.visible = false; xrRight.add(rightLaserLine);
 
-        // Voxel-cassette faceplates: cached 2D backgrounds, uploaded only when a menu is dirty.
-        const studioPalette={bg:'#151b20',surface:'#2a3137',surface2:'#414a55',border:'#8a9997',line:'#58646d',ink:'#f5eed2',muted:'#b2bcaf',cyan:'#8be0ff',lime:'#b8ef72',soft:'#fff4cc'};
+        // Cassette workstation faceplates: cached 2D backgrounds, uploaded only when a menu is dirty.
+        const studioPalette={bg:'#d0cabb',surface:'#45484b',surface2:'#5f6261',border:'#868579',line:'#817e71',ink:'#fff3db',muted:'#373b38',cyan:'#8b3b31',lime:'#554e36',soft:'#fff0cc'};
         const studioFaceplates=new Map();
         function studioRound(ctx,x,y,w,h,r=3){ctx.beginPath();ctx.roundRect(x+.5,y+.5,Math.max(0,w-1),Math.max(0,h-1),Math.min(r,w/2,h/2));}
-        function studioPanel(ctx,width,height,accent=studioPalette.cyan){
-            const key=`${width}/${height}/${accent}`;
+        function studioPanel(ctx,width,height){
+            const key=`${width}/${height}`;
             let bg=studioFaceplates.get(key);
             if(!bg){
                 bg=document.createElement('canvas');bg.width=width;bg.height=height;
                 const p=bg.getContext('2d');
-                const shell=p.createLinearGradient(0,0,0,height);shell.addColorStop(0,'#3b4550');shell.addColorStop(1,'#20272d');
-                p.fillStyle=shell;p.fillRect(0,0,width,height);
-                p.fillStyle='#10161b';p.fillRect(4,4,width-8,height-8);
-                const body=p.createLinearGradient(0,9,0,height-9);body.addColorStop(0,'#2b333b');body.addColorStop(1,'#1b2228');
-                p.fillStyle=body;p.fillRect(9,9,width-18,height-18);
-                p.fillStyle='#11171c';p.fillRect(15,15,width-30,34);
-                p.fillStyle=accent;p.fillRect(7,7,5,height-14);
-                p.fillStyle='#ffb45b';p.fillRect(14,21,40,4);
-                p.fillStyle='#59656f';
-                for(let x=63;x<width-28;x+=18)p.fillRect(x,22,10,2);
-                p.strokeStyle='#97a39c';p.lineWidth=2;p.strokeRect(3,3,width-6,height-6);
-                p.strokeStyle='rgba(255,255,255,0.08)';p.strokeRect(10.5,10.5,width-21,height-21);
-                p.fillStyle='#7c878f';
-                for(const [x,y] of [[16,15],[width-16,15],[16,height-16],[width-16,height-16]]){
-                    p.beginPath();p.arc(x,y,3.1,0,Math.PI*2);p.fill();
-                    p.fillStyle='#11171c';p.fillRect(x-2,y,4,1);p.fillStyle='#7c878f';
+                p.fillStyle='#555752';p.fillRect(0,0,width,height);
+                p.fillStyle='#eee8d6';p.fillRect(0,0,width-5,height-5);
+                p.fillStyle='#cfc9b9';p.fillRect(4,4,width-10,height-10);
+                p.fillStyle='#22272a';p.fillRect(10,8,width-20,33);
+                p.fillStyle='#42474a';p.fillRect(13,11,width-26,27);
+                p.fillStyle='#e19a4d';p.fillRect(13,11,4,27);
+                for(let x=18;x<width/4;x+=9){
+                    p.fillStyle='#76766e';p.fillRect(x,height-13,5,6);
+                    p.fillStyle='#ece6d5';p.fillRect(x+5,height-12,2,6);
                 }
-                p.fillStyle='#3e4a54';for(let y=height-15;y<height-8;y+=3)p.fillRect(27,y,width-54,1);
-                p.fillStyle='#b8c1b5';p.font='700 9px Consolas,monospace';p.textAlign='right';p.fillText('VTB // 4.1',width-24,height-24);
+                for(const x of [7,width-13]){
+                    p.fillStyle='#89867c';p.fillRect(x,height-16,6,6);
+                    p.fillStyle='#393c3a';p.fillRect(x+1,height-14,4,2);
+                }
                 studioFaceplates.set(key,bg);
             }
             ctx.drawImage(bg,0,0);
         }
-        function studioHeader(ctx,title,tag,accent=studioPalette.cyan){
+        function studioHeader(ctx,title,tag){
             ctx.textBaseline='middle';ctx.textAlign='left';ctx.fillStyle=studioPalette.ink;
             ctx.font='700 19px Consolas,monospace';ctx.fillText(String(title).toUpperCase(),22,23,350);
-            ctx.textAlign='right';ctx.font='700 10px Consolas,monospace';ctx.fillStyle=accent;ctx.fillText(String(tag).toUpperCase(),492,23,142);
+            ctx.textAlign='right';ctx.font='700 10px Consolas,monospace';ctx.fillStyle='#f0c384';ctx.fillText(String(tag).toUpperCase(),492,23,142);
         }
         function studioSection(ctx,label,y){
             ctx.textAlign='left';ctx.textBaseline='middle';ctx.font='700 14px Consolas,monospace';
@@ -1988,10 +1926,12 @@ function updatePlanePreview(start, end, isPainting) {
         }
         function drawButton(ctx,x,y,w,h,text,isActive){
             const active=!!isActive;
-            studioRound(ctx,x,y,w,h,3);ctx.fillStyle=active?'#5a452c':'#2c343b';ctx.fill();
-            studioRound(ctx,x+1,y+1,w-2,h-2,2);ctx.strokeStyle=active?'rgba(255,255,255,0.10)':'rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.stroke();
-            studioRound(ctx,x,y,w,h,3);ctx.strokeStyle=active?'#ffe0a6':'#8a9895';ctx.lineWidth=active?2.3:1.1;ctx.stroke();
-            ctx.fillStyle=active?'#ffb36b':'#8be0ff';ctx.fillRect(x+3,y+4,3,Math.max(0,h-8));
+            ctx.fillStyle='#575950';ctx.fillRect(x,y,w,h);
+            ctx.fillStyle=active?'#69313c':'#272b2e';ctx.fillRect(x+1,y+1,w-2,h-2);
+            const top=active?3:1;
+            ctx.fillStyle=active?'#a26068':'#747779';ctx.fillRect(x+2,y+top,w-5,h-6);
+            ctx.fillStyle=active?'#813f4c':'#464b50';ctx.fillRect(x+4,y+top+2,w-8,h-9);
+            if(active){ctx.fillStyle='#f3b75d';ctx.fillRect(x+5,y+top+4,4,4);}
             let size=h<27?11:h<35?13:h<43?14:16;
             if(w<65)size=Math.min(size,14);
             if(w<45)size=Math.min(size,12);
@@ -2002,10 +1942,10 @@ function updatePlanePreview(start, end, isPainting) {
         }
         function drawSlider(ctx,x,y,w,h,label,val,min,max,format=''){
             const pct=Math.max(0,Math.min(1,(val-min)/(max-min)));
-            studioRound(ctx,x,y,w,h,3);ctx.fillStyle='#161c21';ctx.fill();
+            studioRound(ctx,x,y,w,h,3);ctx.fillStyle='#152019';ctx.fill();
             ctx.save();studioRound(ctx,x+2,y+2,w-4,h-4,2);ctx.clip();
-            ctx.fillStyle='#41505a';ctx.fillRect(x,y,w*pct,h);
-            ctx.fillStyle='#8be0ff';ctx.fillRect(x+w*pct-2,y,4,h);ctx.restore();
+            ctx.fillStyle='#595c42';ctx.fillRect(x,y,w*pct,h);
+            ctx.fillStyle='#dca354';ctx.fillRect(x+w*pct-2,y,4,h);ctx.restore();
             studioRound(ctx,x,y,w,h,3);ctx.strokeStyle='#9ea086';ctx.lineWidth=1.4;ctx.stroke();
             const displayVal=Number.isInteger(val)?val:Number(val.toFixed(2));
             const caption=format?format.replace('%v',displayVal):`${label}: ${displayVal}°`;
@@ -2025,6 +1965,7 @@ function updatePlanePreview(start, end, isPainting) {
         const leftMenuCanvas = document.createElement('canvas'); leftMenuCanvas.width = 512; leftMenuCanvas.height = 512;
         const leftMenuCtx = leftMenuCanvas.getContext('2d');
         const leftMenuTexture = new THREE.CanvasTexture(leftMenuCanvas);
+        leftMenuTexture.colorSpace = THREE.SRGBColorSpace;
         const leftMenuMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15), new THREE.MeshBasicMaterial({ map: leftMenuTexture, transparent: true, side: THREE.DoubleSide }));
         leftMenuMesh.visible = false; leftMenuMesh.position.set(0, 0.15, -0.05); leftMenuMesh.rotation.x = -Math.PI / 4;
         xrLeft.add(leftMenuMesh);
@@ -2534,13 +2475,13 @@ if (cy >= 60 && cy <= 90) {
         const colorMenuCanvas = document.createElement('canvas'); colorMenuCanvas.width = 512; colorMenuCanvas.height = 512;
         const colorMenuCtx = colorMenuCanvas.getContext('2d');
         const colorMenuTexture = new THREE.CanvasTexture(colorMenuCanvas);
+        colorMenuTexture.colorSpace = THREE.SRGBColorSpace;
         const colorMenuMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15), new THREE.MeshBasicMaterial({ map: colorMenuTexture, transparent: true, side: THREE.DoubleSide }));
         colorMenuMesh.visible = false; colorMenuMesh.position.set(0, 0.15, -0.05); colorMenuMesh.rotation.x = -Math.PI / 4;
         xrLeft.add(colorMenuMesh);
 
         function drawColorPickerUI(ctx, cx, cy, radius, sliderX, sliderY, sliderX_W, sliderX_H, targetColor, isMagnified) {
-            const pickerState = colorControl[activeMatSlot * 2 + activeColorSubSlot];
-            tempHSL.h = pickerState.h; tempHSL.s = pickerState.s; tempHSL.l = pickerState.l;
+            targetColor.getHSL(tempHSL);
             const conic = ctx.createConicGradient(0, cx, cy); for(let i = 0; i <= 360; i += 60) conic.addColorStop(i / 360, `hsl(${i}, 100%, 50%)`);
             ctx.fillStyle = conic; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
             const radial = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius); radial.addColorStop(0, 'rgba(128,128,128,1)'); radial.addColorStop(1, 'rgba(128,128,128,0)'); ctx.fillStyle = radial; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
@@ -2555,15 +2496,15 @@ if (cy >= 60 && cy <= 90) {
         }
 
         function updateColorMenuTexture() {
-            studioPanel(colorMenuCtx,512,512,'#b7f2a0');
+            studioPanel(colorMenuCtx,512,512);
             const targetColor = slotColors[activeMatSlot][activeColorSubSlot];
             if (isPaletteMagnified) {
-                studioHeader(colorMenuCtx,'Color Fine','B / RELEASE TO SET',studioPalette.lime);
+                studioHeader(colorMenuCtx,'Color Fine','B / RELEASE TO SET');
                 drawColorPickerUI(colorMenuCtx, 256, 220, 150, 20, 400, 472, 30, targetColor, true);
                 colorMenuCtx.fillStyle = '#' + targetColor.getHexString(); colorMenuCtx.fillRect(20, 450, 472, 35);
                 targetColor.getHSL(tempHSL); colorMenuCtx.fillStyle = tempHSL.l > 0.6 ? 'black' : 'white'; colorMenuCtx.font = 'bold 20px sans-serif'; colorMenuCtx.fillText(`Release trigger to apply`, 256, 474);
             } else {
-                studioHeader(colorMenuCtx,'Material Deck','B / COLORS + TEXTURE',studioPalette.lime);
+                studioHeader(colorMenuCtx,'Material Deck','B / COLORS + TEXTURE');
                 drawButton(colorMenuCtx, 30, 42, 220, 42, 'SLOT 1 (MAIN)', activeMatSlot === 0); drawButton(colorMenuCtx, 262, 42, 220, 42, 'SLOT 2 (WIRE/DIV)', activeMatSlot === 1);
                 
                 const mType = matTypes[activeMatSlot];
@@ -2573,11 +2514,6 @@ if (cy >= 60 && cy <= 90) {
                 drawButton(colorMenuCtx, 375, 92, 107, 42, 'METAL', mType === 3);
 
                 drawColorPickerUI(colorMenuCtx, 256, 212, 68, 40, 290, 432, 15, targetColor, false);
-                const cc = colorControl[activeMatSlot * 2 + activeColorSubSlot];
-                drawButton(colorMenuCtx, 16, 170, 152, 35, 'LOCK HUE', cc.hueLock);
-                drawButton(colorMenuCtx, 344, 170, 152, 35, 'LOCK LIGHT', cc.lightLock);
-                drawButton(colorMenuCtx, 16, 227, 152, 35, `L: ${joystickModes[0].toUpperCase()}`, joystickModes[0] === 'sat');
-                drawButton(colorMenuCtx, 344, 227, 152, 35, `R: ${joystickModes[1].toUpperCase()}`, joystickModes[1] === 'sat');
                 const cMode = colorModes[activeMatSlot];
                 drawButton(colorMenuCtx, 12, 316, 56, 38, 'SOLID', cMode === 'solid');
                 drawButton(colorMenuCtx, 72, 316, 60, 38, 'GRAD-H', cMode === 'grad_h');
@@ -2670,49 +2606,15 @@ if (cy >= 60 && cy <= 90) {
         function pickColorFromCanvas(cx, cy) {
             let wheelCx = 256, wheelCy = 212, wheelR = 68, sliderX = 40, sliderY = 290, sliderW = 432, sliderH = 15;
             if (isPaletteMagnified) { wheelCx = 256; wheelCy = 220; wheelR = 150; sliderX = 20; sliderY = 400; sliderW = 472; sliderH = 30; }
-            const ci = activeMatSlot * 2 + activeColorSubSlot;
-            const c = colorControl[ci];
-            const dx = cx - wheelCx, dy = cy - wheelCy, dist = Math.sqrt(dx * dx + dy * dy);
-            let changed = false;
-            if (dist <= wheelR) {
-                let angle = Math.atan2(dy, dx); if (angle < 0) angle += Math.PI * 2;
-                const newHue = angle / (Math.PI * 2);
-                const newSat = Math.min(1, dist / wheelR);
-                if (!c.hueLock && c.h !== newHue) { c.h = newHue; changed = true; }
-                if (c.s !== newSat) { c.s = newSat; changed = true; }
-            } else if (cx >= sliderX && cx <= sliderX + sliderW && cy >= sliderY && cy <= sliderY + sliderH) {
-                if (!c.lightLock) {
-                    const newLight = Math.max(0, Math.min(1, (cx - sliderX) / sliderW));
-                    if (c.l !== newLight) { c.l = newLight; changed = true; }
-                }
-            }
-            if (changed) {
-                applyControlledColor(ci);
-                joyColorDirty = true;
-                updateCursors();
-                colorMenuNeedsUpdate = true;
-            }
-        }
-
-        function isCompactColorPickerHit(cx, cy) {
-            const dx = cx - 256, dy = cy - 212;
-            return dx * dx + dy * dy <= 68 * 68 ||
-                (cx >= 40 && cx <= 472 && cy >= 290 && cy <= 305);
+            const targetColor = slotColors[activeMatSlot][activeColorSubSlot]; targetColor.getHSL(tempHSL);
+            const dx = cx - wheelCx, dy = cy - wheelCy, dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist <= wheelR) { let angle = Math.atan2(dy, dx); if (angle < 0) angle += Math.PI * 2; const h = angle / (Math.PI * 2), s = Math.min(1, dist / wheelR); targetColor.setHSL(h, s, tempHSL.l); }
+            else if (cx >= sliderX && cx <= sliderX + sliderW && cy >= sliderY && cy <= sliderY + sliderH) { const l = Math.max(0, Math.min(1, (cx - sliderX) / sliderW)); targetColor.setHSL(tempHSL.h, tempHSL.s, l); }
+            updateCursors(); colorMenuNeedsUpdate = true;
         }
 
         function handleColorMenuClick(cx, cy) {
-            const ci = activeMatSlot * 2 + activeColorSubSlot;
-            if (cy >= 170 && cy <= 205 && cx >= 16 && cx <= 168) {
-                colorControl[ci].hueLock = !colorControl[ci].hueLock;
-                showColorFeedback(true);
-            } else if (cy >= 170 && cy <= 205 && cx >= 344 && cx <= 496) {
-                colorControl[ci].lightLock = !colorControl[ci].lightLock;
-                showColorFeedback(true);
-            } else if (cy >= 227 && cy <= 262 && cx >= 16 && cx <= 168) {
-                toggleJoystickMode(0);
-            } else if (cy >= 227 && cy <= 262 && cx >= 344 && cx <= 496) {
-                toggleJoystickMode(1);
-            } else if (cy >= 42 && cy <= 84) {
+            if (cy >= 42 && cy <= 84) {
                 if (cx >= 30 && cx <= 250) { activeMatSlot = 0; activeColorSubSlot = 0; }
                 if (cx >= 262 && cx <= 482) { activeMatSlot = 1; activeColorSubSlot = 0; }
             } else if (cy >= 92 && cy <= 134) { 
@@ -2740,7 +2642,6 @@ if (cy >= 60 && cy <= 90) {
                     if (cx >= 30 && cx <= 246) activeColorSubSlot = 0;
                     if (cx >= 266 && cx <= 482) activeColorSubSlot = 1;
                 }
-                showColorFeedback(true);
             } else if (colorModes[activeMatSlot] === 'fractal') {
                 if (cy >= 422 && cy <= 460) {
                     if (cx >= 20 && cx <= 132) fractalTypes[activeMatSlot] = 'mandel';
@@ -2802,88 +2703,50 @@ if (cy >= 60 && cy <= 90) {
         const rightMenuCanvas = document.createElement('canvas'); rightMenuCanvas.width = 512; rightMenuCanvas.height = 600;
         const rightMenuCtx = rightMenuCanvas.getContext('2d');
         const rightMenuTexture = new THREE.CanvasTexture(rightMenuCanvas);
+        rightMenuTexture.colorSpace = THREE.SRGBColorSpace;
         const rightMenuMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.175), new THREE.MeshBasicMaterial({ map: rightMenuTexture, transparent: true, side: THREE.DoubleSide }));
         rightMenuMesh.visible = false; rightMenuMesh.position.set(0, 0.16, -0.05); rightMenuMesh.rotation.x = -Math.PI / 4;
         xrRight.add(rightMenuMesh);
 
-        // Joystick color console: one shared texture, only refreshed while active.
-        const joyColorCanvas = document.createElement('canvas');
-        joyColorCanvas.width = 512; joyColorCanvas.height = 256;
+        // Joystick Color Indicator UI
+        const joyColorCanvas = document.createElement('canvas'); joyColorCanvas.width = 256; joyColorCanvas.height = 128;
         const joyColorCtx = joyColorCanvas.getContext('2d');
         const joyColorTexture = new THREE.CanvasTexture(joyColorCanvas);
-        const joyColorMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(0.23, 0.115),
-            new THREE.MeshBasicMaterial({ map: joyColorTexture, transparent: true, side: THREE.DoubleSide })
-        );
-        joyColorMesh.visible = false;
-        joyColorMesh.position.set(0, 0.105, -0.105);
-        joyColorMesh.rotation.x = -Math.PI / 4;
+        joyColorTexture.colorSpace = THREE.SRGBColorSpace;
+        const joyColorMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.08), new THREE.MeshBasicMaterial({ map: joyColorTexture, transparent: true, side: THREE.DoubleSide }));
+        xrRight.add(joyColorMesh);
+        joyColorMesh.visible = false; joyColorMesh.position.set(0, 0.10, -0.08); joyColorMesh.rotation.x = -Math.PI / 4;
         let joyColorActiveTimer = 0;
         let lastJoyTextureUpdateTime = 0;
-        let joyColorDirty = true;
 
         function updateJoyColorTexture() {
-            const ctx = joyColorCtx;
-            ctx.clearRect(0, 0, 512, 256);
-            ctx.fillStyle = '#19251e'; ctx.fillRect(0, 0, 512, 256);
-            ctx.strokeStyle = '#ffb064'; ctx.lineWidth = 3; ctx.strokeRect(2, 2, 508, 252);
-            ctx.font = 'bold 20px Consolas,monospace'; ctx.fillStyle = '#ffb064';
-            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-            ctx.fillText('VTB // COLOR CONTROL', 18, 20);
+            joyColorCtx.clearRect(0, 0, 256, 128);
+            joyColorCtx.fillStyle = '#4a4e50';
+            joyColorCtx.fillRect(0, 0, 256, 128);
+            joyColorCtx.lineWidth = 4; joyColorCtx.strokeStyle = '#cdc7b5'; joyColorCtx.strokeRect(2, 2, 252, 124);
+            
+            joyColorCtx.font = 'bold 16px sans-serif'; joyColorCtx.textAlign = 'center'; joyColorCtx.textBaseline = 'middle';
+            joyColorCtx.fillStyle = '#f1c482'; joyColorCtx.fillText('SLOT 1', 64, 20); joyColorCtx.fillText('SLOT 2', 192, 20);
 
-            for (let hand = 0; hand < 2; hand++) {
-                const x = hand === 0 ? 12 : 260;
-                const target = hand === 0 ? joyLTarget : joyRTarget;
-                ctx.fillStyle = '#24352a'; ctx.fillRect(x, 38, 240, 147);
-                ctx.strokeStyle = '#637c63'; ctx.lineWidth = 2; ctx.strokeRect(x, 38, 240, 147);
-                ctx.font = 'bold 18px Consolas,monospace'; ctx.fillStyle = '#b4e58b';
-                ctx.fillText(`${hand === 0 ? 'LEFT' : 'RIGHT'} / ${joystickModes[hand].toUpperCase()}`, x + 10, 56);
-                if (target < 0 || target > 3) {
-                    ctx.font = '16px Consolas,monospace'; ctx.fillStyle = '#aeb8ac';
-                    ctx.fillText('NOT ASSIGNED', x + 15, 112);
-                    continue;
-                }
-                const c = colorControl[target];
-                const slot = target >> 1, sub = target & 1;
-                ctx.font = 'bold 15px Consolas,monospace'; ctx.fillStyle = '#f0e8d3';
-                ctx.fillText(`SLOT ${slot + 1} / ${sub ? 'B' : 'A'}`, x + 12, 80);
-                ctx.fillStyle = '#' + slotColors[slot][sub].getHexString();
-                ctx.fillRect(x + 12, 94, 65, 65);
-                ctx.strokeStyle = '#f0e8d3'; ctx.lineWidth = 2; ctx.strokeRect(x + 12, 94, 65, 65);
-                ctx.font = '16px Consolas,monospace'; ctx.fillStyle = '#f0e8d3';
-                ctx.fillText(`H ${Math.round(c.h * 360)}°`, x + 88, 102);
-                ctx.fillText(`S ${Math.round(c.s * 100)}%`, x + 88, 125);
-                ctx.fillText(`L ${Math.round(c.l * 100)}%`, x + 88, 148);
-                ctx.font = 'bold 12px Consolas,monospace'; ctx.fillStyle = (c.hueLock || c.lightLock) ? '#ffb064' : '#aeb8ac';
-                ctx.fillText(`${c.hueLock ? 'H LOCK' : 'H OPEN'}  ${c.lightLock ? 'L LOCK' : 'L OPEN'}`, x + 12, 174);
-            }
-            ctx.font = 'bold 11px Consolas,monospace'; ctx.fillStyle = '#aeb8ac'; ctx.textAlign = 'center';
-            ctx.fillText('CLICK STICK TO SWITCH HUE / SAT', 256, 193);
-            ctx.font = 'bold 12px Consolas,monospace'; ctx.textBaseline = 'middle';
-            for (let i = 0; i < 4; i++) {
-                const x = 16 + i * 124, slot = i >> 1, sub = i & 1;
-                ctx.fillStyle = '#' + slotColors[slot][sub].getHexString(); ctx.fillRect(x, 201, 106, 27);
-                ctx.strokeStyle = (joyLTarget === i || joyRTarget === i) ? '#ffffff' : '#5a685b';
-                ctx.lineWidth = (joyLTarget === i || joyRTarget === i) ? 3 : 1;
-                ctx.strokeRect(x, 201, 106, 27);
-                ctx.fillStyle = '#f0e8d3'; ctx.textAlign = 'center';
-                ctx.fillText(`${slot + 1}${sub ? 'B' : 'A'}`, x + 53, 238);
-            }
+            // Draw Slot 1 Colors (A & B)
+            joyColorCtx.fillStyle = '#' + slotColors[0][0].getHexString(); joyColorCtx.fillRect(16, 40, 44, 44);
+            joyColorCtx.strokeStyle = (joyLTarget === 0 || joyRTarget === 0) ? '#fff' : '#444'; joyColorCtx.lineWidth = (joyLTarget === 0 || joyRTarget === 0) ? 4 : 2; joyColorCtx.strokeRect(16, 40, 44, 44);
+            
+            joyColorCtx.fillStyle = '#' + slotColors[0][1].getHexString(); joyColorCtx.fillRect(68, 40, 44, 44);
+            joyColorCtx.strokeStyle = (joyLTarget === 1 || joyRTarget === 1) ? '#fff' : '#444'; joyColorCtx.lineWidth = (joyLTarget === 1 || joyRTarget === 1) ? 4 : 2; joyColorCtx.strokeRect(68, 40, 44, 44);
+
+            // Draw Slot 2 Colors (A & B)
+            joyColorCtx.fillStyle = '#' + slotColors[1][0].getHexString(); joyColorCtx.fillRect(144, 40, 44, 44);
+            joyColorCtx.strokeStyle = (joyLTarget === 2 || joyRTarget === 2) ? '#fff' : '#444'; joyColorCtx.lineWidth = (joyLTarget === 2 || joyRTarget === 2) ? 4 : 2; joyColorCtx.strokeRect(144, 40, 44, 44);
+            
+            joyColorCtx.fillStyle = '#' + slotColors[1][1].getHexString(); joyColorCtx.fillRect(196, 40, 44, 44);
+            joyColorCtx.strokeStyle = (joyLTarget === 3 || joyRTarget === 3) ? '#fff' : '#444'; joyColorCtx.lineWidth = (joyLTarget === 3 || joyRTarget === 3) ? 4 : 2; joyColorCtx.strokeRect(196, 40, 44, 44);
+
+            joyColorCtx.fillStyle = '#ddd'; joyColorCtx.font = '13px sans-serif';
+            joyColorCtx.fillText('Color A', 38, 100); joyColorCtx.fillText('Color B', 90, 100);
+            joyColorCtx.fillText('Color A', 166, 100); joyColorCtx.fillText('Color B', 218, 100);
+            
             joyColorTexture.needsUpdate = true;
-        }
-
-        function showColorFeedback(forceRefresh = false) {
-            if (!renderer.xr.isPresenting) return;
-            const now = performance.now();
-            const wasHidden = !joyColorMesh.visible;
-            joyColorMesh.visible = true;
-            joyColorActiveTimer = now + 1700;
-            if (forceRefresh) joyColorDirty = true;
-            if (joyColorDirty && (forceRefresh || wasHidden || now - lastJoyTextureUpdateTime >= 75)) {
-                updateJoyColorTexture();
-                lastJoyTextureUpdateTime = now;
-                joyColorDirty = false;
-            }
         }
 
         // Three navigation groups: tool count unchanged, but selection is now task-oriented.
@@ -2958,6 +2821,7 @@ if (cy >= 60 && cy <= 90) {
 	const globalMenuCanvas = document.createElement('canvas'); globalMenuCanvas.width = 512; globalMenuCanvas.height = 1024;
         const globalMenuCtx = globalMenuCanvas.getContext('2d');
         const globalMenuTexture = new THREE.CanvasTexture(globalMenuCanvas);
+        globalMenuTexture.colorSpace = THREE.SRGBColorSpace;
         const globalMenuMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.30), new THREE.MeshBasicMaterial({ map: globalMenuTexture, transparent: true, side: THREE.DoubleSide }));
         globalMenuMesh.visible = false; globalMenuMesh.position.set(0, 0.22, -0.05); globalMenuMesh.rotation.x = -Math.PI / 4;
         xrRight.add(globalMenuMesh);
@@ -2991,18 +2855,19 @@ if (cy >= 60 && cy <= 90) {
         }
 
         function updateGlobalMenuTexture() {
-            studioPanel(globalMenuCtx,512,1024,'#b7f2a0');
+            studioPanel(globalMenuCtx,512,1024);
 
             if (globalMenuMode === 'save') {
-                globalMenuCtx.fillStyle = '#00b894';
+                globalMenuCtx.fillStyle = '#fff0d5';
                 globalMenuCtx.font = 'bold 28px sans-serif';
                 globalMenuCtx.textAlign = 'center';
-                globalMenuCtx.fillText('Save .VTB Project (In-VR)', 256, 38);
+                globalMenuCtx.textBaseline = 'middle';
+                globalMenuCtx.fillText('Save .VTB Project (In-VR)', 256, 24);
 
                 // Filename Input Display Box
                 globalMenuCtx.fillStyle = '#111';
                 globalMenuCtx.fillRect(30, 62, 452, 54);
-                globalMenuCtx.strokeStyle = '#00ffcc';
+                globalMenuCtx.strokeStyle = '#929782';
                 globalMenuCtx.lineWidth = 2;
                 globalMenuCtx.strokeRect(30, 62, 452, 54);
                 globalMenuCtx.fillStyle = '#fff';
@@ -3037,14 +2902,14 @@ if (cy >= 60 && cy <= 90) {
                 drawButton(globalMenuCtx, 335, 495, 147, 60, 'BACK', false);
 
                 // Recent Saved Files (Tap to reuse name)
-                globalMenuCtx.fillStyle = '#4facfe';
+                globalMenuCtx.fillStyle = '#393d39';
                 globalMenuCtx.font = 'bold 20px sans-serif';
                 globalMenuCtx.textAlign = 'center';
                 globalMenuCtx.fillText('Tap Existing File to Overwrite Name:', 256, 585);
 
                 const maxQuick = Math.min(5, vrFileList.length);
                 if (maxQuick === 0) {
-                    globalMenuCtx.fillStyle = '#888';
+                    globalMenuCtx.fillStyle = '#393d39';
                     globalMenuCtx.font = '18px sans-serif';
                     globalMenuCtx.fillText('No saved files in VR storage yet.', 256, 635);
                 } else {
@@ -3056,7 +2921,7 @@ if (cy >= 60 && cy <= 90) {
                 }
 
                 if (vrStatusMsg) {
-                    globalMenuCtx.fillStyle = '#00ffcc';
+                    globalMenuCtx.fillStyle = '#393d39';
                     globalMenuCtx.font = 'bold 20px sans-serif';
                     globalMenuCtx.fillText(vrStatusMsg, 256, 930);
                 }
@@ -3066,22 +2931,23 @@ if (cy >= 60 && cy <= 90) {
             }
 
             if (globalMenuMode === 'load') {
-                globalMenuCtx.fillStyle = '#6c5ce7';
+                globalMenuCtx.fillStyle = '#fff0d5';
                 globalMenuCtx.font = 'bold 28px sans-serif';
                 globalMenuCtx.textAlign = 'center';
-                globalMenuCtx.fillText('Load .VTB Project (In-VR)', 256, 38);
+                globalMenuCtx.textBaseline = 'middle';
+                globalMenuCtx.fillText('Load .VTB Project (In-VR)', 256, 24);
 
                 const totalPages = Math.max(1, Math.ceil(vrFileList.length / 6));
                 if (vrFilePage >= totalPages) vrFilePage = totalPages - 1;
 
-                globalMenuCtx.fillStyle = '#ccc';
+                globalMenuCtx.fillStyle = '#393d39';
                 globalMenuCtx.font = '18px sans-serif';
                 const dirInfo = vrDirectoryHandle ? `VR Storage + Folder (${vrDirectoryName})` : 'VR Storage (IndexedDB)';
                 globalMenuCtx.fillText(`${dirInfo} — ${vrFileList.length} file(s)`, 256, 68);
 
                 const startIdx = vrFilePage * 6;
                 if (vrFileList.length === 0) {
-                    globalMenuCtx.fillStyle = '#888';
+                    globalMenuCtx.fillStyle = '#393d39';
                     globalMenuCtx.font = 'bold 20px sans-serif';
                     globalMenuCtx.fillText('No .VTB files found.', 256, 360);
                     globalMenuCtx.font = '16px sans-serif';
@@ -3110,7 +2976,7 @@ if (cy >= 60 && cy <= 90) {
                 drawButton(globalMenuCtx, 267, 825, 215, 58, 'BACK', true);
 
                 if (vrStatusMsg) {
-                    globalMenuCtx.fillStyle = '#00ffcc';
+                    globalMenuCtx.fillStyle = '#393d39';
                     globalMenuCtx.font = 'bold 20px sans-serif';
                     globalMenuCtx.fillText(vrStatusMsg, 256, 930);
                 }
@@ -3121,7 +2987,7 @@ if (cy >= 60 && cy <= 90) {
 
             // Four focused pages. Each button dispatches into the untouched original handler.
             globalActionTargets=[];
-            studioHeader(globalMenuCtx,'SYSTEM DECK','Y / WORKSPACE',studioPalette.lime);
+            studioHeader(globalMenuCtx,'SYSTEM DECK','Y / WORKSPACE');
             [['operate','01 STUDIO'],['mirror','02 SYMM'],['array','03 ARRAY'],['files','04 FILES']].forEach(([page,label],i)=>{
                 const x=17+i*124;
                 drawButton(globalMenuCtx,x,62,115,58,label,page===workspacePage);
@@ -3193,7 +3059,7 @@ if (cy >= 60 && cy <= 90) {
             }
             globalMenuCtx.textAlign='center';globalMenuCtx.font='700 13px Consolas,monospace';globalMenuCtx.fillStyle=studioPalette.lime;
             globalMenuCtx.fillText('X: TOOL INDEX   B: MATERIALS   A: OPTIONS',256,988,460);
-            if(vrStatusMsg){globalMenuCtx.fillStyle='#ffd08b';globalMenuCtx.fillText(vrStatusMsg,256,964,460);}
+            if(vrStatusMsg){globalMenuCtx.fillStyle='#70353b';globalMenuCtx.fillText(vrStatusMsg,256,964,460);}
             globalMenuTexture.needsUpdate=true;
         }
 
@@ -3487,8 +3353,8 @@ if (cy >= 60 && cy <= 90) {
                     buf = await file.arrayBuffer();
                 }
                 if (buf) {
+                    if (!await loadFromVTB(buf)) return;
                     vrFileName = item.name.replace(/\.vtb$/i, '');
-                    await loadFromVTB(buf);
                     setVRStatus(`Loaded ${item.name}`);
                 }
             } catch (e) {
@@ -3694,26 +3560,16 @@ if (cy >= 60 && cy <= 90) {
         const vtbScratchPairs = new Uint32Array(2048);
 
         async function compressBytes(uint8Data) {
-            if (typeof CompressionStream === 'undefined') return { compressed: false, data: uint8Data };
             try {
-                const cs = new CompressionStream('deflate-raw');
-                const writer = cs.writable.getWriter();
-                writer.write(uint8Data);
-                writer.close();
-                const buf = await new Response(cs.readable).arrayBuffer();
-                return { compressed: true, data: new Uint8Array(buf) };
-            } catch (e) {
-                return { compressed: false, data: uint8Data };
+                const stream = new ReadableStream({start(controller) { controller.enqueue(uint8Data); controller.close(); }}).pipeThrough(new CompressionStream('deflate-raw'));
+                return {compressed:true, data:new Uint8Array(await new Response(stream).arrayBuffer())};
+            } catch {
+                return {compressed:false, data:uint8Data};
             }
         }
-
-        async function decompressBytes(uint8Data, expectedLength) {
-            const ds = new DecompressionStream('deflate-raw');
-            const writer = ds.writable.getWriter();
-            writer.write(uint8Data);
-            writer.close();
-            const buf = await new Response(ds.readable).arrayBuffer();
-            return new Uint8Array(buf);
+        async function decompressBytes(uint8Data) {
+            const stream = new ReadableStream({start(controller) { controller.enqueue(uint8Data); controller.close(); }}).pipeThrough(new DecompressionStream('deflate-raw'));
+            return new Uint8Array(await new Response(stream).arrayBuffer());
         }
 
         async function saveToVTB(customName = null) {
@@ -3732,11 +3588,6 @@ if (cy >= 60 && cy <= 90) {
                     wq: [worldGroup.quaternion.x, worldGroup.quaternion.y, worldGroup.quaternion.z, worldGroup.quaternion.w],
                     ws: [worldGroup.scale.x, worldGroup.scale.y, worldGroup.scale.z],
                     ms: [activeMatSlot, activeColorSubSlot, joyLTarget, joyRTarget],
-                    jc: {
-                        mode: joystickModes.slice(),
-                        hsl: colorControl.map(c => [c.h, c.s, c.l]),
-                        locks: colorControl.map(c => [c.hueLock, c.lightLock])
-                    },
                     mt: [matTypes[0], matTypes[1]],
                     cm: [colorModes[0], colorModes[1]],
                     sc: [
@@ -3956,6 +3807,35 @@ if (cy >= 60 && cy <= 90) {
             }
         }
 
+        // Walk the binary boundaries before replacing the open model.
+        function validateChunkRecords(bytes, view, offset) {
+            const chunksInFile = view.getUint32(offset, true);
+            offset += 4;
+            for (let c = 0; c < chunksInFile; c++) {
+                if (offset + 7 > bytes.length) throw new Error('Incomplete chunk header.');
+                const mask = bytes[offset + 6];
+                offset += 7;
+                if (mask > 15) throw new Error('Invalid material mask.');
+                for (let material = 0; material < 4; material++) {
+                    if (!(mask & (1 << material))) continue;
+                    const count = view.getUint16(offset, true);
+                    offset += 2;
+                    if (count > CHUNK_VOL || offset + count * 4 > bytes.length)
+                        throw new Error('Incomplete voxel layer.');
+                    let index = -1;
+                    for (let i = 0; i < count; i++) {
+                        let delta = bytes[offset++];
+                        if (delta & 128) delta = (delta & 127) + 128 * bytes[offset++];
+                        index += 1 + delta;
+                    }
+                    offset += count * 3;
+                    if (index >= CHUNK_VOL || offset > bytes.length)
+                        throw new Error('Invalid voxel layer.');
+                }
+            }
+            if (offset !== bytes.length) throw new Error('Unexpected .VTB length.');
+        }
+
         async function loadFromVTB(arrayBuffer) {
             const loadBtn = document.getElementById('load-button-overlay');
             const origText = loadBtn ? loadBtn.innerText : 'Load .VTB';
@@ -3963,7 +3843,7 @@ if (cy >= 60 && cy <= 90) {
 
             try {
                 const fileBytes = new Uint8Array(arrayBuffer);
-                if (fileBytes.length < 9 || fileBytes[0] !== 0x56 || fileBytes[1] !== 0x54 || fileBytes[2] !== 0x42 || fileBytes[3] !== 0x31) {
+                if (fileBytes.length < 9 || fileBytes[4] > 1 || fileBytes[0] !== 0x56 || fileBytes[1] !== 0x54 || fileBytes[2] !== 0x42 || fileBytes[3] !== 0x31) {
                     throw new Error('Invalid .VTB file header.');
                 }
 
@@ -3971,7 +3851,8 @@ if (cy >= 60 && cy <= 90) {
                 const headView = new DataView(fileBytes.buffer, fileBytes.byteOffset, fileBytes.byteLength);
                 const uncompressedLength = headView.getUint32(5, true);
                 const rawSlice = fileBytes.subarray(9);
-                const payload = isCompressed ? await decompressBytes(rawSlice, uncompressedLength) : rawSlice;
+                const payload = isCompressed ? await decompressBytes(rawSlice) : rawSlice;
+                if (payload.length !== uncompressedLength) throw new Error('Incomplete .VTB payload.');
                 const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
 
                 let ptr = 0;
@@ -3979,6 +3860,7 @@ if (cy >= 60 && cy <= 90) {
                 const metaJson = new TextDecoder().decode(payload.subarray(ptr, ptr + metaLen)); ptr += metaLen;
                 const meta = JSON.parse(metaJson);
 
+                validateChunkRecords(payload, view, ptr);
                 // 1. Clear active selection, undo/redo stacks, and dispose existing GPU chunk meshes
                 if (hasSelection) cancelSelection();
                 hideAllPreviews();
@@ -4000,6 +3882,7 @@ if (cy >= 60 && cy <= 90) {
                 chunks.clear();
                 cachedChunkKey = NaN;
                 cachedChunk = null;
+                autoPerfEngaged = false;
                 totalActiveVoxels = 0;
 
                 // 2. Restore world transform, palette, materials, symmetry, and tool settings
@@ -4021,34 +3904,6 @@ if (cy >= 60 && cy <= 90) {
                     slotColors[1][0].setHex(meta.sc[1][0]);
                     slotColors[1][1].setHex(meta.sc[1][1]);
                 }
-                // Older .VTB projects do not contain joystick state. Rebuild
-                // from their actual palette, then restore extended state if present.
-                joystickModes[0] = joystickModes[1] = 'hue';
-                for (let i = 0; i < 4; i++) {
-                    syncColorControlFromColor(i >> 1, i & 1, false);
-                    colorControl[i].hueLock = false;
-                    colorControl[i].lightLock = false;
-                }
-                if (meta.jc && typeof meta.jc === 'object') {
-                    if (Array.isArray(meta.jc.mode)) {
-                        for (let i = 0; i < 2; i++) if (meta.jc.mode[i] === 'hue' || meta.jc.mode[i] === 'sat') joystickModes[i] = meta.jc.mode[i];
-                    }
-                    for (let i = 0; i < 4; i++) {
-                        const hsl = Array.isArray(meta.jc.hsl) ? meta.jc.hsl[i] : null;
-                        if (Array.isArray(hsl) && hsl.length >= 3 && hsl.slice(0, 3).every(Number.isFinite)) {
-                            colorControl[i].h = wrapHue(hsl[0]);
-                            colorControl[i].s = THREE.MathUtils.clamp(hsl[1], 0, 1);
-                            colorControl[i].l = THREE.MathUtils.clamp(hsl[2], 0, 1);
-                        }
-                        const locks = Array.isArray(meta.jc.locks) ? meta.jc.locks[i] : null;
-                        if (Array.isArray(locks)) {
-                            colorControl[i].hueLock = locks[0] === true;
-                            colorControl[i].lightLock = locks[1] === true;
-                        }
-                    }
-                }
-                colorMenuNeedsUpdate = true;
-                joyColorDirty = true;
                 if (meta.fr) {
                     for (let i = 0; i < 2; i++) {
                         fractalTypes[i] = meta.fr[0][i];
@@ -4091,7 +3946,7 @@ if (cy >= 60 && cy <= 90) {
                 }
                 if (meta.tl) {
                     const t = meta.tl;
-                    if (t.activeTool !== undefined) activeTool = t.activeTool;
+                    if (studioTools.some(tool => tool.id === t.activeTool)) activeTool = t.activeTool;
                     if (t.extrudeAxis !== undefined) extrudeAxis = t.extrudeAxis;
                     if (t.extrudeAdjoining !== undefined) extrudeAdjoining = t.extrudeAdjoining;
                     if (t.extrudeColorMode !== undefined) extrudeColorMode = t.extrudeColorMode;
@@ -4250,8 +4105,16 @@ if (cy >= 60 && cy <= 90) {
                 updateCursors();
                 flushDirtyChunks();
                 leftMenuNeedsUpdate = rightMenuNeedsUpdate = colorMenuNeedsUpdate = globalMenuNeedsUpdate = true;
+                toolMenuPage = Object.keys(toolMenuGroups).find(page => toolMenuGroups[page].includes(activeTool)) || 'mark';
+                syncDesktopToolButtons();
+                sessionStatus.textContent = '';
+                return true;
             } catch (err) {
-                console.error('Failed to load .VTB file:', err);
+                const message = 'Open failed: ' + err.message;
+                sessionStatus.textContent = message;
+                setVRStatus(message);
+                console.error(message, err);
+                return false;
             } finally {
                 if (loadBtn) loadBtn.innerText = origText;
             }
@@ -4275,10 +4138,10 @@ if (cy >= 60 && cy <= 90) {
                     });
                     const file = await fileHandle.getFile();
                     const buf = await file.arrayBuffer();
+                    if (!await loadFromVTB(buf)) return;
                     vrFileName = file.name.replace(/\.vtb$/i, '');
                     await saveVTBToIDB(file.name, new Uint8Array(buf));
                     await refreshVRFileList();
-                    await loadFromVTB(buf);
                     return;
                 } catch (err) {
                     if (err && err.name === 'AbortError') return;
@@ -6957,7 +6820,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                 } else if (colorMenuHovered && colorMenuMesh.visible) {
                     menuClickActive = true;
                     const cx=Math.floor(colorMenuUV.x*512), cy=Math.floor((1-colorMenuUV.y)*512);
-                    if(isCompactColorPickerHit(cx,cy)) { isColorPicking=true; isPaletteMagnified=true; updateColorMenuTexture(); } else handleColorMenuClick(cx,cy);
+                    if(cy>=140&&cy<=310&&cx>=20&&cx<=492) { isColorPicking=true; isPaletteMagnified=true; updateColorMenuTexture(); } else handleColorMenuClick(cx,cy);
                     return;
                 }
 		} else if (this === xrLeft) { 
@@ -6991,7 +6854,6 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                 const sampledMat = getVoxelMatAndColor(gx, gy, gz, tempColor);
                 if (sampledMat !== -1) {
                     slotColors[activeMatSlot][activeColorSubSlot].copy(tempColor);
-                    syncColorControlFromColor(activeMatSlot, activeColorSubSlot);
                     matTypes[activeMatSlot] = sampledMat;
                     isDropperActive = false;
                     colorMenuNeedsUpdate = true;
@@ -7230,7 +7092,18 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
 
 
 
-controller0.addEventListener('selectstart', onSelectStart); controller1.addEventListener('selectstart', onSelectStart);
+        for (const [controller, grip] of [[controller0, grip0], [controller1, grip1]]) {
+            controller.addEventListener('connected', ({data}) => {
+                if (data.handedness === 'right') {
+                    xrRight = controller; gripRight = grip;
+                    controller.add(rightLaserLine, rightMenuMesh, globalMenuMesh, joyColorMesh);
+                } else if (data.handedness === 'left') {
+                    xrLeft = controller; gripLeft = grip;
+                    controller.add(leftLaserLine, leftMenuMesh, colorMenuMesh);
+                }
+            });
+        }
+        controller0.addEventListener('selectstart', onSelectStart); controller1.addEventListener('selectstart', onSelectStart);
         controller0.addEventListener('selectend', onSelectEnd); controller1.addEventListener('selectend', onSelectEnd);
         controller0.addEventListener('squeezestart', onSqueezeStart); controller1.addEventListener('squeezestart', onSqueezeStart);
         controller0.addEventListener('squeezeend', onSqueezeEnd); controller1.addEventListener('squeezeend', onSqueezeEnd);
@@ -7245,131 +7118,95 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
         function pollGamepads() {
             const session = renderer.xr.getSession();
             if (!session) return;
-            const now = performance.now();
-            const dt = lastJoystickFrameTime ? Math.max(0, Math.min(0.05, (now - lastJoystickFrameTime) / 1000)) : 0;
-            lastJoystickFrameTime = now;
             let joyChanged = false;
             let anyJoyActive = false;
-            for (const source of session.inputSources) {
-                if (!source || !source.gamepad) continue;
-                const gamepad = source.gamepad;
-                const right = source.handedness === 'right';
-                const left = source.handedness === 'left';
-                if (!right && !left) continue;
-                const hand = right ? 1 : 0;
+            for (let source of session.inputSources) {
+                if (source && source.gamepad) {
+                    if (source.handedness === 'right') { 
+                        rightTriggerValue = source.gamepad.buttons[0]?.value || (source.gamepad.buttons[0]?.pressed ? 1 : 0);
+                        
+                        // Fire draw logic manually immediately after crossing the deadzone (bypassing the hardware select bound)
+                        if ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode)) {
+                            if (rightTriggerValue > 0.05 && prevRightTriggerValue <= 0.05) onSelectStart.call(xrRight);
+                            else if (rightTriggerValue <= 0.05 && prevRightTriggerValue > 0.05) onSelectEnd.call(xrRight);
+                        }
+                        prevRightTriggerValue = rightTriggerValue;
 
-                if (right) {
-                    rightTriggerValue = gamepad.buttons[0]?.value || (gamepad.buttons[0]?.pressed ? 1 : 0);
-                    // Keep the analog-pressure drawing path unchanged.
-                    if ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode)) {
-                        if (rightTriggerValue > 0.05 && prevRightTriggerValue <= 0.05) onSelectStart.call(xrRight);
-                        else if (rightTriggerValue <= 0.05 && prevRightTriggerValue > 0.05) onSelectEnd.call(xrRight);
+
+                        const a = source.gamepad.buttons[4]?.pressed ||
+                        false, b = source.gamepad.buttons[5]?.pressed || false; if (leftMenuMesh) leftMenuMesh.visible = a && !b; if (colorMenuMesh) colorMenuMesh.visible = b;
+                        if (a && !lastRightBtnA) leftMenuNeedsUpdate = true; if (b && !lastRightBtnB) colorMenuNeedsUpdate = true; lastRightBtnA = a; lastRightBtnB = b;
                     }
-                    prevRightTriggerValue = rightTriggerValue;
-                    const a = gamepad.buttons[4]?.pressed || false;
-                    const b = gamepad.buttons[5]?.pressed || false;
-                    if (leftMenuMesh) leftMenuMesh.visible = a && !b;
-                    if (colorMenuMesh) colorMenuMesh.visible = b;
-                    if (a && !lastRightBtnA) leftMenuNeedsUpdate = true;
-                    if (b && !lastRightBtnB) colorMenuNeedsUpdate = true;
-                    lastRightBtnA = a; lastRightBtnB = b;
-                } else {
-                    leftTriggerValue = gamepad.buttons[0]?.value || (gamepad.buttons[0]?.pressed ? 1 : 0);
-                    if ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode)) {
-                        if (leftTriggerValue > 0.05 && prevLeftTriggerValue <= 0.05) onSelectStart.call(xrLeft);
-                        else if (leftTriggerValue <= 0.05 && prevLeftTriggerValue > 0.05) onSelectEnd.call(xrLeft);
+                    if (source.handedness === 'left') { 
+                        leftTriggerValue = source.gamepad.buttons[0]?.value || (source.gamepad.buttons[0]?.pressed ? 1 : 0);
+                        
+                        // Same handling for erasing
+                        if ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode)) {
+                            if (leftTriggerValue > 0.05 && prevLeftTriggerValue <= 0.05) onSelectStart.call(xrLeft);
+                            else if (leftTriggerValue <= 0.05 && prevLeftTriggerValue > 0.05) onSelectEnd.call(xrLeft);
+                        }
+                        prevLeftTriggerValue = leftTriggerValue;
+
+                        const x = source.gamepad.buttons[4]?.pressed ||
+                        false, y = source.gamepad.buttons[5]?.pressed || false; if (rightMenuMesh) rightMenuMesh.visible = x && !y; if (globalMenuMesh) globalMenuMesh.visible = y;
+                        if (x && !lastLeftBtnX) rightMenuNeedsUpdate = true; if (y && !lastLeftBtnY) globalMenuNeedsUpdate = true; lastLeftBtnX = x; lastLeftBtnY = y;
                     }
-                    prevLeftTriggerValue = leftTriggerValue;
-                    const x = gamepad.buttons[4]?.pressed || false;
-                    const y = gamepad.buttons[5]?.pressed || false;
-                    if (rightMenuMesh) rightMenuMesh.visible = x && !y;
-                    if (globalMenuMesh) globalMenuMesh.visible = y;
-                    if (x && !lastLeftBtnX) rightMenuNeedsUpdate = true;
-                    if (y && !lastLeftBtnY) globalMenuNeedsUpdate = true;
-                    lastLeftBtnX = x; lastLeftBtnY = y;
-                }
-
-                // WebXR standard gamepad mapping: button 3 = thumbstick click.
-                // Do not steal right-stick actions from Free Transform selections.
-                const rightStickReserved = right && hasSelection && transformMode === 'free';
-                const thumbPressed = !!gamepad.buttons[3]?.pressed;
-                if (thumbPressed && !lastThumbstickPressed[hand] && !rightStickReserved) {
-                    toggleJoystickMode(hand);
-                }
-                lastThumbstickPressed[hand] = thumbPressed;
-
-                const axes = gamepad.axes;
-                if (!axes || axes.length < 2) continue;
-                const xVal = Number(axes.length >= 4 ? axes[2] : axes[0]) || 0;
-                const yVal = Number(axes.length >= 4 ? axes[3] : axes[1]) || 0;
-                if (rightStickReserved) {
-                    if (Math.abs(yVal) > JOYSTICK_DEADZONE && dt > 0) {
-                        const nextScale = Math.max(0.1, Math.min(5.0, selectionScale - yVal * 4.5 * dt));
-                        if (nextScale !== selectionScale) {
+                    const ax = source.gamepad.axes;
+                    if (ax && ax.length >= 2) { 
+                        const xVal = ax.length >= 4 ? ax[2] : ax[0], yVal = ax.length >= 4 ? ax[3] : ax[1], dead = 0.15;
+                        if (hasSelection && transformMode === 'free' && source.handedness === 'right' && Math.abs(yVal) > dead) {
                             ensureBaseSelectionRemoved();
-                            selectionScale = nextScale;
+                            selectionScale = Math.max(0.1, Math.min(5.0, selectionScale - yVal * 0.05));
                             updateRotatedSelection();
                             leftMenuNeedsUpdate = true;
-                        }
+                        } else if (Math.abs(xVal) > dead || Math.abs(yVal) > dead) { 
+                            const targetIdx = source.handedness === 'right' ?
+                            joyRTarget : joyLTarget;
+                            if (targetIdx !== -1) {
+                                const s = Math.floor(targetIdx / 2), sub = targetIdx % 2, trackerIdx = source.handedness === 'right' ?
+                                0 : 1;
+                                const tc = slotColors[s][sub]; tc.getHSL(tempHSL);
+                                if (tempHSL.l > 0.01 && tempHSL.l < 0.99) { joystickTracker[trackerIdx].h = tempHSL.h;
+                                joystickTracker[trackerIdx].s = tempHSL.s; }
+                                if (Math.abs(xVal) > dead) { joystickTracker[trackerIdx].h += (xVal * 0.005);
+                                if (joystickTracker[trackerIdx].h > 1) joystickTracker[trackerIdx].h -= 1; if (joystickTracker[trackerIdx].h < 0) joystickTracker[trackerIdx].h += 1;
+                                if (joystickTracker[trackerIdx].s < 0.1) joystickTracker[trackerIdx].s = 0.8; }
+                                let nL = tempHSL.l;
+                                if (Math.abs(yVal) > dead) { nL -= (yVal * 0.005); nL = Math.max(0, Math.min(1, nL));
+                                }
+                                tc.setHSL(joystickTracker[trackerIdx].h, joystickTracker[trackerIdx].s, nL);
+                                anyJoyActive = true; joyChanged = true;
+                            }
+                        } 
                     }
-                    continue;
-                }
-
-                const shapedX = joystickResponse(xVal);
-                const shapedY = joystickResponse(yVal);
-                if (shapedX === 0 && shapedY === 0) continue;
-                const target = right ? joyRTarget : joyLTarget;
-                if (target < 0 || target > 3) continue;
-                anyJoyActive = true;
-                if (dt === 0) continue;
-                const c = colorControl[target];
-                let changed = false;
-                if (shapedX !== 0) {
-                    if (joystickModes[hand] === 'hue') {
-                        if (!c.hueLock) {
-                            c.h = wrapHue(c.h + shapedX * HUE_RATE * dt);
-                            changed = true;
-                        }
-                    } else {
-                        const sat = Math.max(0, Math.min(1, c.s + shapedX * SAT_RATE * dt));
-                        if (sat !== c.s) { c.s = sat; changed = true; }
-                    }
-                }
-                if (shapedY !== 0 && !c.lightLock) {
-                    const light = Math.max(0, Math.min(1, c.l - shapedY * LIGHT_RATE * dt));
-                    if (light !== c.l) { c.l = light; changed = true; }
-                }
-                if (changed) {
-                    applyControlledColor(target);
-                    joyChanged = true;
                 }
             }
-            if (joyChanged) {
-                joyColorDirty = true;
+            
+            if (joyChanged) { 
+                // Force pressure size recalculation by invalidating the cache
                 lastRightEffSize = -1;
                 lastLeftEffSize = -1;
-                updateCursors();
-                if (now - lastColorJoystickUpdateTime > 60) {
-                    colorMenuNeedsUpdate = true;
-                    lastColorJoystickUpdateTime = now;
-                }
+                updateCursors(); 
+                if (Date.now() - lastColorJoystickUpdateTime > 50) { 
+                    colorMenuNeedsUpdate = true; 
+                    lastColorJoystickUpdateTime = Date.now();
+                } 
             }
-            if (anyJoyActive) showColorFeedback();
-            else if (joyColorMesh.visible && now > joyColorActiveTimer) joyColorMesh.visible = false;
+            
+            if (anyJoyActive) {
+                joyColorActiveTimer = Date.now() + 1500; // Keep UI active for 1.5 seconds after stopping
+                const indicatorWasHidden = !joyColorMesh.visible;
+                joyColorMesh.visible = true;
+                const uiNow = performance.now();
+                if(indicatorWasHidden || uiNow-lastJoyTextureUpdateTime>=75){
+                    updateJoyColorTexture();
+                    lastJoyTextureUpdateTime=uiNow;
+                }
+            } else if (joyColorMesh.visible && Date.now() > joyColorActiveTimer) {
+                joyColorMesh.visible = false;
+            }
         }
-
-        renderer.xr.addEventListener('sessionstart', () => {
-            lastJoystickFrameTime = 0;
-            lastThumbstickPressed[0] = false;
-            lastThumbstickPressed[1] = false;
-        });
-        renderer.xr.addEventListener('sessionend', () => {
-            joyColorMesh.visible = false;
-            lastJoystickFrameTime = 0;
-            lastThumbstickPressed[0] = false;
-            lastThumbstickPressed[1] = false;
-        });
-
+        
         let lastRightEffSize = -1;
         let lastLeftEffSize = -1;
         let lastDrawnRightEffSize = -1;
@@ -7377,10 +7214,10 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
         
         renderer.setAnimationLoop(() => {
             const hudTime=performance.now();
-            if(hudTime-hudTick>1500) {hudTick=hudTime;updateStudioHUD();}
+            if(!renderer.xr.isPresenting && hudTime-hudTick>1500) {hudTick=hudTime;updateStudioHUD();}
             shiftProgress += 0.005 * shiftDir; if(shiftProgress>=1)shiftDir=-1; if(shiftProgress<=0)shiftDir=1;
             if (renderer.xr.isPresenting) {
-                const session = renderer.xr.getSession(); if(session) for(let i=0;i<session.inputSources.length;i++){ const s=session.inputSources[i]; if(s){ const c=i===0?controller0:controller1, g=i===0?grip0:grip1; if(s.handedness==='right'&&xrRight!==c){ xrRight=c; gripRight=g; xrRight.add(rightLaserLine, rightMenuMesh, globalMenuMesh, joyColorMesh); } else if(s.handedness==='left'&&xrLeft!==c){ xrLeft=c; gripLeft=g; xrLeft.add(leftLaserLine, leftMenuMesh, colorMenuMesh); } } }
+
                 if(xrLeft){ leftPointerPos.setFromMatrixPosition(xrLeft.matrixWorld); leftDir.set(0,0,-1).transformDirection(xrLeft.matrixWorld); } if(xrRight){ rightPointerPos.setFromMatrixPosition(xrRight.matrixWorld); rightDir.set(0,0,-1).transformDirection(xrRight.matrixWorld); }
                 pollGamepads();
                 
@@ -7406,8 +7243,8 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                     updateCursors();
                 }
 
-                if(Date.now()-lastMenuUpdateTime>100){ if(leftMenuMesh.visible&&leftMenuNeedsUpdate){ updateLeftMenuTexture(); leftMenuNeedsUpdate=false; } if(rightMenuMesh.visible&&rightMenuNeedsUpdate){ updateRightMenuTexture(); rightMenuNeedsUpdate=false; } if(colorMenuMesh.visible&&colorMenuNeedsUpdate){ updateColorMenuTexture(); colorMenuNeedsUpdate=false; } if(globalMenuMesh.visible&&globalMenuNeedsUpdate){ updateGlobalMenuTexture(); globalMenuNeedsUpdate=false; } lastMenuUpdateTime=Date.now(); }                if((rightMenuMesh.visible||globalMenuMesh.visible)&&xrLeft){ raycaster.set(leftPointerPos, leftDir); if(rightMenuMesh.visible){ const inters=raycaster.intersectObject(rightMenuMesh); if(inters.length>0){ rightMenuHovered=true; rightMenuUV.x=inters[0].uv.x; rightMenuUV.y=inters[0].uv.y; leftLaserLine.scale.z=inters[0].distance; } else rightMenuHovered=false; } else if(globalMenuMesh.visible){ const inters=raycaster.intersectObject(globalMenuMesh); if(inters.length>0){ globalMenuHovered=true; globalMenuUV.x=inters[0].uv.x; globalMenuUV.y=inters[0].uv.y; leftLaserLine.scale.z=inters[0].distance; } else globalMenuHovered=false; } leftLaserLine.visible=true; } else { rightMenuHovered=globalMenuHovered=false; if(leftLaserLine)leftLaserLine.visible=false; }
-                if((leftMenuMesh.visible||colorMenuMesh.visible)&&xrRight){ raycaster.set(rightPointerPos, rightDir); if(leftMenuMesh.visible){ const inters=raycaster.intersectObject(leftMenuMesh); if(inters.length>0){ leftMenuHovered=true; leftMenuUV.x=inters[0].uv.x; leftMenuUV.y=inters[0].uv.y; rightLaserLine.scale.z=inters[0].distance; } else leftMenuHovered=false; } else if(colorMenuMesh.visible){ const inters=raycaster.intersectObject(colorMenuMesh); if(inters.length>0){ colorMenuHovered=true; colorMenuUV.x=inters[0].uv.x; colorMenuUV.y=inters[0].uv.y; rightLaserLine.scale.z=inters[0].distance; } else colorMenuHovered=false; } rightLaserLine.visible=true; } else { leftMenuHovered=colorMenuHovered=false; if(rightLaserLine)rightLaserLine.visible=false; }
+                if(Date.now()-lastMenuUpdateTime>100){ if(leftMenuMesh.visible&&leftMenuNeedsUpdate){ updateLeftMenuTexture(); leftMenuNeedsUpdate=false; } if(rightMenuMesh.visible&&rightMenuNeedsUpdate){ updateRightMenuTexture(); rightMenuNeedsUpdate=false; } if(colorMenuMesh.visible&&colorMenuNeedsUpdate){ updateColorMenuTexture(); colorMenuNeedsUpdate=false; } if(globalMenuMesh.visible&&globalMenuNeedsUpdate){ updateGlobalMenuTexture(); globalMenuNeedsUpdate=false; } lastMenuUpdateTime=Date.now(); }                if((rightMenuMesh.visible||globalMenuMesh.visible)&&xrLeft){ raycaster.set(leftPointerPos, leftDir); if(rightMenuMesh.visible){ globalMenuHovered=false; const inters=menuHitTest(rightMenuMesh); if(inters.length>0){ rightMenuHovered=true; rightMenuUV.x=inters[0].uv.x; rightMenuUV.y=inters[0].uv.y; leftLaserLine.scale.z=inters[0].distance; } else rightMenuHovered=false; } else if(globalMenuMesh.visible){ rightMenuHovered=false; const inters=menuHitTest(globalMenuMesh); if(inters.length>0){ globalMenuHovered=true; globalMenuUV.x=inters[0].uv.x; globalMenuUV.y=inters[0].uv.y; leftLaserLine.scale.z=inters[0].distance; } else globalMenuHovered=false; } leftLaserLine.visible=true; } else { rightMenuHovered=globalMenuHovered=false; if(leftLaserLine)leftLaserLine.visible=false; }
+                if((leftMenuMesh.visible||colorMenuMesh.visible)&&xrRight){ raycaster.set(rightPointerPos, rightDir); if(leftMenuMesh.visible){ colorMenuHovered=false; const inters=menuHitTest(leftMenuMesh); if(inters.length>0){ leftMenuHovered=true; leftMenuUV.x=inters[0].uv.x; leftMenuUV.y=inters[0].uv.y; rightLaserLine.scale.z=inters[0].distance; } else leftMenuHovered=false; } else if(colorMenuMesh.visible){ leftMenuHovered=false; const inters=menuHitTest(colorMenuMesh); if(inters.length>0){ colorMenuHovered=true; colorMenuUV.x=inters[0].uv.x; colorMenuUV.y=inters[0].uv.y; rightLaserLine.scale.z=inters[0].distance; } else colorMenuHovered=false; } rightLaserLine.visible=true; } else { leftMenuHovered=colorMenuHovered=false; if(rightLaserLine)rightLaserLine.visible=false; }
                 if(activeSliderDrag&&leftMenuHovered){
                     const isRotationDrag=/^(rot[XYZ]|stepRot[XYZ])$/.test(activeSliderDrag);
                     const pct=Math.max(0,Math.min(1,(leftMenuUV.x*512-(isRotationDrag?93:50))/(isRotationDrag?326:412)));
@@ -7911,8 +7748,8 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                 if(needsSync(linePreviewMesh, showM)) syncMirrorProxies(linePreviewMesh, getMirrorProxies(linePreviewMesh), showM);
                 if(needsSync(lineWireframeMesh, showM)) syncMirrorProxies(lineWireframeMesh, getMirrorProxies(lineWireframeMesh), showM);
                 
-                flushDirtyChunks();
             }
+            flushDirtyChunks();
             if (renderMode === 'performance') {
                 const effSize = VOXEL_SIZE * 1.15 * worldGroup.scale.y;
                 for (let i = 0; i < perfMaterials.length; i++) {
@@ -7953,10 +7790,10 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                 const file = e.target.files && e.target.files[0];
                 if (file) {
                     const buf = await file.arrayBuffer();
+                    if (!await loadFromVTB(buf)) return;
                     vrFileName = file.name.replace(/\.vtb$/i, '');
                     await saveVTBToIDB(file.name, new Uint8Array(buf));
                     await refreshVRFileList();
-                    await loadFromVTB(buf);
                 }
             });
         }
@@ -7969,10 +7806,10 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
             const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
             if (file && file.name.toLowerCase().endsWith('.vtb')) {
                 const buf = await file.arrayBuffer();
+                if (!await loadFromVTB(buf)) return;
                 vrFileName = file.name.replace(/\.vtb$/i, '');
                 await saveVTBToIDB(file.name, new Uint8Array(buf));
                 await refreshVRFileList();
-                await loadFromVTB(buf);
             }
         });
 
