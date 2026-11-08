@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo v4.4
+    VoxTrotBravo v4.7
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo v4.4</title>
+    <title>VoxTrotBravo v4.7</title>
     <style>
 :root{color-scheme:dark;--ink:#f0e8d3;--muted:#aeb8ac;--accent:#ffb064;--accent2:#b4e58b;--surface:#1b2521;--line:#56685a}
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111715;color:var(--ink);font-family:Consolas,'Lucida Console',monospace}canvas{display:block}button{font:inherit}
@@ -55,20 +55,21 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
 </head>
 <body>
     <div id="loading-overlay">
-        <h2>VoxTrotBravo v4.4</h2>
+        <h2>VoxTrotBravo v4.7</h2>
         <p>Preparing studio…</p>
         <div class="spinner"></div>
     </div>
 
     <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
-        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.4</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.7</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
         <div class="ui-content"><div class="eyebrow">Controller quick guide</div>
             <div class="command-rows">
                 <div class="command"><b>A · Right</b><span>Current tool settings / rotate</span></div>
                 <div class="command"><b>B · Right</b><span>Material and color controls</span></div>
-                <div class="command"><b>X · Left</b><span>Mark / Forms / Edit tool index</span></div>
+                <div class="command"><b>X · Left</b><span>Tool index · press X once to end an active Point Sheet</span></div>
                 <div class="command"><b>Y · Left</b><span>Studio / symmetry / arrays / files</span></div>
                 <div class="command"><b>Triggers</b><span>Right to draw/select · left to erase/drop · hold left in Line to pin its start</span></div>
+                <div class="command"><b>Thumbsticks</b><span>Click for hue or saturation · horizontal adjusts it · vertical adjusts lightness</span></div>
                 <div class="command"><b>Grips</b><span>Move, scale and rotate the world</span></div>
             </div>
             <div class="shortcut-foot"><strong>Precision:</strong> Tap 1°, 5°, or 15° in Select options or the Studio panel. Exact rotation nudges are available on A.<br>© 2024–2026 Rob Reynolds. All rights reserved.</div>
@@ -291,6 +292,13 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         let arcBulge = 1.0;        // Multiplier for the arc curve depth
         let arcControlMode = 'dynamic'; // 'dynamic' or 'manual'
         let arcTilt = 0;           // Tilt angle in degrees
+        function inPointSheet() {
+            return activeTool === 'line' && lineDrawMode === 'sheet' && lineSheetType === 'point';
+        }
+        function endPointSheet() {
+            lastArcPoints.length = 0;
+            leftMenuNeedsUpdate = rightMenuNeedsUpdate = true;
+        }
         let lastArcPoints = [];    // Cache for sheet extrusion
 
 
@@ -360,9 +368,51 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
             [new THREE.Color(0x00ffcc), new THREE.Color(0xffff00)]  
         ];
         
-        const joystickTracker = [ {h: 0.55, s: 1.0}, {h: 0.95, s: 1.0} ]; 
-        
-        let joyLTarget = 1; 
+        // Each of the four material colors owns its own HSL intent.
+        // This prevents color loss when a color reaches black/white/gray and
+        // when a different joystick is assigned to the same color later.
+        const colorControl = slotColors.flatMap(pair => pair.map(color => {
+            const hsl = color.getHSL({ h: 0, s: 0, l: 0 });
+            return { h: hsl.h, s: hsl.s, l: hsl.l, hueLock: false, lightLock: false };
+        }));
+        // index 0 = LEFT hand, 1 = RIGHT hand; click thumbstick to switch.
+        const joystickModes = ['hue', 'hue'];
+        const lastThumbstickPressed = [false, false];
+        let lastJoystickFrameTime = 0;
+        const JOYSTICK_DEADZONE = 0.15;
+        const HUE_RATE = 0.36;   // cycles per second at full deflection
+        const SAT_RATE = 0.70;   // saturation units per second
+        const LIGHT_RATE = 0.70; // lightness units per second
+
+        function wrapHue(h) { return ((h % 1) + 1) % 1; }
+        function applyControlledColor(index) {
+            const c = colorControl[index];
+            slotColors[index >> 1][index & 1].setHSL(c.h, c.s, c.l);
+        }
+        function syncColorControlFromColor(slot, sub, preserveAchromatic = true) {
+            const c = colorControl[slot * 2 + sub];
+            slotColors[slot][sub].getHSL(tempHSL);
+            // At black or white the RGB representation cannot reveal the
+            // original hue/saturation. Preserve that information when sampling.
+            if (tempHSL.s > 0.00001 || !preserveAchromatic) c.h = tempHSL.h;
+            if (tempHSL.s > 0.00001 || !preserveAchromatic || (tempHSL.l > 0.00001 && tempHSL.l < 0.99999)) c.s = tempHSL.s;
+            c.l = tempHSL.l;
+        }
+        function joystickResponse(raw) {
+            const magnitude = Math.abs(raw);
+            if (magnitude <= JOYSTICK_DEADZONE) return 0;
+            const t = Math.min(1, (magnitude - JOYSTICK_DEADZONE) / (1 - JOYSTICK_DEADZONE));
+            // Subtle center movements give fine control; full deflection is fast.
+            const curve = 0.06 * t + 0.94 * t * t * t;
+            return raw < 0 ? -curve : curve;
+        }
+        function toggleJoystickMode(handIndex) {
+            joystickModes[handIndex] = joystickModes[handIndex] === 'hue' ? 'sat' : 'hue';
+            colorMenuNeedsUpdate = true;
+            showColorFeedback(true);
+        }
+
+        let joyLTarget = 1;
         let joyRTarget = 0;
 
         let shiftProgress = 0;
@@ -733,6 +783,11 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         pmremGenerator.dispose();
         
         const studioGeo = new THREE.BoxGeometry(200, 200, 200);
+        // Leave the underside open to the plain studio background; retain the modeling grid.
+        const studioNormals = studioGeo.getAttribute('normal');
+        const studioIndices = Array.from(studioGeo.index.array).filter(i => studioNormals.getY(i) > -0.5);
+        studioGeo.clearGroups();
+        studioGeo.setIndex(studioIndices);
         // Molded panels on the existing studio shell. One static texture and one unlit draw.
         const casingCanvas = document.createElement('canvas');
         casingCanvas.width = casingCanvas.height = 128;
@@ -767,7 +822,27 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         // Use Lambert shading for standard matte clay to bypass per-pixel PMREM envMap lookups in VR stereo
         const matSolid = new THREE.MeshLambertMaterial({ depthFunc: THREE.LessEqualDepth }); 
         const matGlass = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.35, depthWrite: false, depthFunc: THREE.LessEqualDepth }); 
-        const matEmission = new THREE.MeshBasicMaterial({ depthFunc: THREE.LessEqualDepth }); 
+        // A luminous colored core under a glossy surface, in the existing instanced draw.
+        const matEmission = new THREE.MeshStandardMaterial({
+            roughness: 0.15, metalness: 0.08, envMapIntensity: 0.85, depthFunc: THREE.LessEqualDepth
+        });
+        matEmission.onBeforeCompile = shader => {
+            shader.vertexShader = 'varying vec2 neonFace;\n' + shader.vertexShader.replace(
+                '#include <begin_vertex>',
+                `#include <begin_vertex>
+                neonFace = abs(normal.x) > 0.5 ? position.yz : (abs(normal.y) > 0.5 ? position.xz : position.xy);`
+            );
+            shader.fragmentShader = 'varying vec2 neonFace;\n' + shader.fragmentShader.replace(
+                '#include <emissivemap_fragment>',
+                `#include <emissivemap_fragment>
+                float edge = max(abs(neonFace.x), abs(neonFace.y));
+                float core = 1.0 - smoothstep(0.22, 0.51, edge);
+                vec3 tint = diffuseColor.rgb;
+                float peak = max(tint.r, max(tint.g, tint.b));
+                totalEmissiveRadiance = tint * (0.42 + 0.92 * core) + vec3(0.19 * peak * core * core);
+                diffuseColor.rgb *= 0.25;`
+            );
+        }; 
         const matMetal = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 1.0, depthFunc: THREE.LessEqualDepth });
         
         const voxelMaterials = [matSolid, matGlass, matEmission, matMetal];
@@ -793,7 +868,15 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         const ptSize = VOXEL_SIZE * 1.15;
         const ptSolid = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, map: perfTex, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
         const ptGlass = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, map: perfTex, transparent: true, opacity: 0.4, depthWrite: false, depthFunc: THREE.LessEqualDepth });
-        const ptEmission = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, map: perfTex, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
+        const ptEmission = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
+        ptEmission.onBeforeCompile = shader => {
+            shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>',
+                `#include <color_fragment>
+                vec2 p = abs(gl_PointCoord - vec2(0.5));
+                float core = 1.0 - smoothstep(0.22, 0.51, max(p.x, p.y));
+                float peak = max(diffuseColor.r, max(diffuseColor.g, diffuseColor.b));
+                diffuseColor.rgb = diffuseColor.rgb * (0.48 + 0.88 * core) + vec3(0.19 * peak * core * core);`);
+        };
         const ptMetal = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, map: perfTex, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
         const perfMaterials = [ptSolid, ptGlass, ptEmission, ptMetal];
 
@@ -1988,7 +2071,8 @@ function updatePlanePreview(start, end, isPainting) {
             const activeInfo=studioTools.find(item=>item.id===activeTool);
             studioHeader(leftMenuCtx,activeInfo?.name || activeTool,'A / TOOL OPTIONS');
             leftMenuCtx.fillStyle=studioPalette.muted;leftMenuCtx.textAlign='center';leftMenuCtx.font='11px system-ui,sans-serif';
-            if (activeTool === 'line') leftMenuCtx.fillText(lineAnchorHeld ? 'LEFT END PINNED' : 'HOLD LEFT TRIGGER TO PIN START',256,503);
+            if (inPointSheet()) leftMenuCtx.fillText(lineAnchorHeld ? 'LEFT END PINNED   /   X: END SHEET' : 'L TRIGGER: PIN   /   X: END SHEET',256,503);
+            else if (activeTool === 'line') leftMenuCtx.fillText(lineAnchorHeld ? 'LEFT END PINNED' : 'HOLD LEFT TRIGGER TO PIN START',256,503);
             else if(!(activeTool==='select'&&hasSelection&&transformMode==='copy')) leftMenuCtx.fillText('X TO CHANGE TOOLS / B FOR COLORS',256,503);
         if (activeTool === 'brush') {
             drawButton(leftMenuCtx, 50, 70, 130, 50, 'CUBE', strokeSettings.brush.shape === 'cube'); 
@@ -2044,7 +2128,7 @@ function updatePlanePreview(start, end, isPainting) {
 
             const radiusLocked = (lineDrawMode === 'sheet');
             drawButton(leftMenuCtx, 50, 310, 80, 40, '[-]', false); 
-            drawButton(leftMenuCtx, 140, 310, 232, 40, radiusLocked ? (lineSheetType === 'point' ? 'NEW SHEET' : 'Radius: LOCKED') : `Radius: ${strokeSettings.line.size}`, radiusLocked); 
+            drawButton(leftMenuCtx, 140, 310, 232, 40, radiusLocked ? (lineSheetType === 'point' ? 'END SHEET' : 'Radius: LOCKED') : `Radius: ${strokeSettings.line.size}`, radiusLocked); 
             drawButton(leftMenuCtx, 382, 310, 80, 40, '[+]', false);
 
             drawButton(leftMenuCtx, 50, 355, 200, 40, 'Shape: CUBE', strokeSettings.line.shape === 'cube'); 
@@ -2365,7 +2449,7 @@ if (cy >= 60 && cy <= 90) {
                 else if (cy >= 180 && cy <= 220) { if (cx >= 50 && cx <= 250) arcControlMode = 'dynamic'; if (cx >= 262 && cx <= 462) arcControlMode = 'manual'; }
                 else if (cy >= 310 && cy <= 350) { 
                     if (lineDrawMode === 'sheet' && lineSheetType === 'point' && cx >= 140 && cx <= 372) {
-                        lastArcPoints.length = 0;
+                        endPointSheet();
                     }
                     if (lineDrawMode !== 'sheet') {
                         if (cx >= 50 && cx <= 130) strokeSettings.line.size = Math.max(1, strokeSettings.line.size - 1); 
@@ -2498,7 +2582,8 @@ if (cy >= 60 && cy <= 90) {
         xrLeft.add(colorMenuMesh);
 
         function drawColorPickerUI(ctx, cx, cy, radius, sliderX, sliderY, sliderX_W, sliderX_H, targetColor, isMagnified) {
-            targetColor.getHSL(tempHSL);
+            const pickerState = colorControl[activeMatSlot * 2 + activeColorSubSlot];
+            tempHSL.h = pickerState.h; tempHSL.s = pickerState.s; tempHSL.l = pickerState.l;
             const conic = ctx.createConicGradient(0, cx, cy); for(let i = 0; i <= 360; i += 60) conic.addColorStop(i / 360, `hsl(${i}, 100%, 50%)`);
             ctx.fillStyle = conic; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
             const radial = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius); radial.addColorStop(0, 'rgba(128,128,128,1)'); radial.addColorStop(1, 'rgba(128,128,128,0)'); ctx.fillStyle = radial; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
@@ -2531,6 +2616,11 @@ if (cy >= 60 && cy <= 90) {
                 drawButton(colorMenuCtx, 375, 92, 107, 42, 'METAL', mType === 3);
 
                 drawColorPickerUI(colorMenuCtx, 256, 212, 68, 40, 290, 432, 15, targetColor, false);
+                const cc = colorControl[activeMatSlot * 2 + activeColorSubSlot];
+                drawButton(colorMenuCtx, 16, 170, 152, 35, 'LOCK HUE', cc.hueLock);
+                drawButton(colorMenuCtx, 344, 170, 152, 35, 'LOCK LIGHT', cc.lightLock);
+                drawButton(colorMenuCtx, 16, 227, 152, 35, `L: ${joystickModes[0].toUpperCase()}`, joystickModes[0] === 'sat');
+                drawButton(colorMenuCtx, 344, 227, 152, 35, `R: ${joystickModes[1].toUpperCase()}`, joystickModes[1] === 'sat');
                 const cMode = colorModes[activeMatSlot];
                 drawButton(colorMenuCtx, 12, 316, 56, 38, 'SOLID', cMode === 'solid');
                 drawButton(colorMenuCtx, 72, 316, 60, 38, 'GRAD-H', cMode === 'grad_h');
@@ -2623,15 +2713,49 @@ if (cy >= 60 && cy <= 90) {
         function pickColorFromCanvas(cx, cy) {
             let wheelCx = 256, wheelCy = 212, wheelR = 68, sliderX = 40, sliderY = 290, sliderW = 432, sliderH = 15;
             if (isPaletteMagnified) { wheelCx = 256; wheelCy = 220; wheelR = 150; sliderX = 20; sliderY = 400; sliderW = 472; sliderH = 30; }
-            const targetColor = slotColors[activeMatSlot][activeColorSubSlot]; targetColor.getHSL(tempHSL);
-            const dx = cx - wheelCx, dy = cy - wheelCy, dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist <= wheelR) { let angle = Math.atan2(dy, dx); if (angle < 0) angle += Math.PI * 2; const h = angle / (Math.PI * 2), s = Math.min(1, dist / wheelR); targetColor.setHSL(h, s, tempHSL.l); }
-            else if (cx >= sliderX && cx <= sliderX + sliderW && cy >= sliderY && cy <= sliderY + sliderH) { const l = Math.max(0, Math.min(1, (cx - sliderX) / sliderW)); targetColor.setHSL(tempHSL.h, tempHSL.s, l); }
-            updateCursors(); colorMenuNeedsUpdate = true;
+            const ci = activeMatSlot * 2 + activeColorSubSlot;
+            const c = colorControl[ci];
+            const dx = cx - wheelCx, dy = cy - wheelCy, dist = Math.sqrt(dx * dx + dy * dy);
+            let changed = false;
+            if (dist <= wheelR) {
+                let angle = Math.atan2(dy, dx); if (angle < 0) angle += Math.PI * 2;
+                const newHue = angle / (Math.PI * 2);
+                const newSat = Math.min(1, dist / wheelR);
+                if (!c.hueLock && c.h !== newHue) { c.h = newHue; changed = true; }
+                if (c.s !== newSat) { c.s = newSat; changed = true; }
+            } else if (cx >= sliderX && cx <= sliderX + sliderW && cy >= sliderY && cy <= sliderY + sliderH) {
+                if (!c.lightLock) {
+                    const newLight = Math.max(0, Math.min(1, (cx - sliderX) / sliderW));
+                    if (c.l !== newLight) { c.l = newLight; changed = true; }
+                }
+            }
+            if (changed) {
+                applyControlledColor(ci);
+                joyColorDirty = true;
+                updateCursors();
+                colorMenuNeedsUpdate = true;
+            }
+        }
+
+        function isCompactColorPickerHit(cx, cy) {
+            const dx = cx - 256, dy = cy - 212;
+            return dx * dx + dy * dy <= 68 * 68 ||
+                (cx >= 40 && cx <= 472 && cy >= 290 && cy <= 305);
         }
 
         function handleColorMenuClick(cx, cy) {
-            if (cy >= 42 && cy <= 84) {
+            const ci = activeMatSlot * 2 + activeColorSubSlot;
+            if (cy >= 170 && cy <= 205 && cx >= 16 && cx <= 168) {
+                colorControl[ci].hueLock = !colorControl[ci].hueLock;
+                showColorFeedback(true);
+            } else if (cy >= 170 && cy <= 205 && cx >= 344 && cx <= 496) {
+                colorControl[ci].lightLock = !colorControl[ci].lightLock;
+                showColorFeedback(true);
+            } else if (cy >= 227 && cy <= 262 && cx >= 16 && cx <= 168) {
+                toggleJoystickMode(0);
+            } else if (cy >= 227 && cy <= 262 && cx >= 344 && cx <= 496) {
+                toggleJoystickMode(1);
+            } else if (cy >= 42 && cy <= 84) {
                 if (cx >= 30 && cx <= 250) { activeMatSlot = 0; activeColorSubSlot = 0; }
                 if (cx >= 262 && cx <= 482) { activeMatSlot = 1; activeColorSubSlot = 0; }
             } else if (cy >= 92 && cy <= 134) { 
@@ -2659,6 +2783,7 @@ if (cy >= 60 && cy <= 90) {
                     if (cx >= 30 && cx <= 246) activeColorSubSlot = 0;
                     if (cx >= 266 && cx <= 482) activeColorSubSlot = 1;
                 }
+                showColorFeedback(true);
             } else if (colorModes[activeMatSlot] === 'fractal') {
                 if (cy >= 422 && cy <= 460) {
                     if (cx >= 20 && cx <= 132) fractalTypes[activeMatSlot] = 'mandel';
@@ -2725,45 +2850,86 @@ if (cy >= 60 && cy <= 90) {
         rightMenuMesh.visible = false; rightMenuMesh.position.set(0, 0.16, -0.05); rightMenuMesh.rotation.x = -Math.PI / 4;
         xrRight.add(rightMenuMesh);
 
-        // Joystick Color Indicator UI
-        const joyColorCanvas = document.createElement('canvas'); joyColorCanvas.width = 256; joyColorCanvas.height = 128;
+        // Joystick color console: one shared texture, only refreshed while active.
+        const joyColorCanvas = document.createElement('canvas');
+        joyColorCanvas.width = 512; joyColorCanvas.height = 256;
         const joyColorCtx = joyColorCanvas.getContext('2d');
         const joyColorTexture = new THREE.CanvasTexture(joyColorCanvas);
         joyColorTexture.colorSpace = THREE.SRGBColorSpace;
-        const joyColorMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.08), new THREE.MeshBasicMaterial({ map: joyColorTexture, transparent: true, side: THREE.DoubleSide }));
+        const joyColorMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.23, 0.115),
+            new THREE.MeshBasicMaterial({ map: joyColorTexture, transparent: true, side: THREE.DoubleSide })
+        );
         xrRight.add(joyColorMesh);
-        joyColorMesh.visible = false; joyColorMesh.position.set(0, 0.10, -0.08); joyColorMesh.rotation.x = -Math.PI / 4;
+        joyColorMesh.visible = false;
+        joyColorMesh.position.set(0, 0.105, -0.105);
+        joyColorMesh.rotation.x = -Math.PI / 4;
         let joyColorActiveTimer = 0;
         let lastJoyTextureUpdateTime = 0;
+        let joyColorDirty = true;
 
         function updateJoyColorTexture() {
-            joyColorCtx.clearRect(0, 0, 256, 128);
-            joyColorCtx.fillStyle = '#4a4e50';
-            joyColorCtx.fillRect(0, 0, 256, 128);
-            joyColorCtx.lineWidth = 4; joyColorCtx.strokeStyle = '#cdc7b5'; joyColorCtx.strokeRect(2, 2, 252, 124);
-            
-            joyColorCtx.font = 'bold 16px sans-serif'; joyColorCtx.textAlign = 'center'; joyColorCtx.textBaseline = 'middle';
-            joyColorCtx.fillStyle = '#f1c482'; joyColorCtx.fillText('SLOT 1', 64, 20); joyColorCtx.fillText('SLOT 2', 192, 20);
+            const ctx = joyColorCtx;
+            ctx.clearRect(0, 0, 512, 256);
+            ctx.fillStyle = '#19251e'; ctx.fillRect(0, 0, 512, 256);
+            ctx.strokeStyle = '#ffb064'; ctx.lineWidth = 3; ctx.strokeRect(2, 2, 508, 252);
+            ctx.font = 'bold 20px Consolas,monospace'; ctx.fillStyle = '#ffb064';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillText('VTB // COLOR CONTROL', 18, 20);
 
-            // Draw Slot 1 Colors (A & B)
-            joyColorCtx.fillStyle = '#' + slotColors[0][0].getHexString(); joyColorCtx.fillRect(16, 40, 44, 44);
-            joyColorCtx.strokeStyle = (joyLTarget === 0 || joyRTarget === 0) ? '#fff' : '#444'; joyColorCtx.lineWidth = (joyLTarget === 0 || joyRTarget === 0) ? 4 : 2; joyColorCtx.strokeRect(16, 40, 44, 44);
-            
-            joyColorCtx.fillStyle = '#' + slotColors[0][1].getHexString(); joyColorCtx.fillRect(68, 40, 44, 44);
-            joyColorCtx.strokeStyle = (joyLTarget === 1 || joyRTarget === 1) ? '#fff' : '#444'; joyColorCtx.lineWidth = (joyLTarget === 1 || joyRTarget === 1) ? 4 : 2; joyColorCtx.strokeRect(68, 40, 44, 44);
-
-            // Draw Slot 2 Colors (A & B)
-            joyColorCtx.fillStyle = '#' + slotColors[1][0].getHexString(); joyColorCtx.fillRect(144, 40, 44, 44);
-            joyColorCtx.strokeStyle = (joyLTarget === 2 || joyRTarget === 2) ? '#fff' : '#444'; joyColorCtx.lineWidth = (joyLTarget === 2 || joyRTarget === 2) ? 4 : 2; joyColorCtx.strokeRect(144, 40, 44, 44);
-            
-            joyColorCtx.fillStyle = '#' + slotColors[1][1].getHexString(); joyColorCtx.fillRect(196, 40, 44, 44);
-            joyColorCtx.strokeStyle = (joyLTarget === 3 || joyRTarget === 3) ? '#fff' : '#444'; joyColorCtx.lineWidth = (joyLTarget === 3 || joyRTarget === 3) ? 4 : 2; joyColorCtx.strokeRect(196, 40, 44, 44);
-
-            joyColorCtx.fillStyle = '#ddd'; joyColorCtx.font = '13px sans-serif';
-            joyColorCtx.fillText('Color A', 38, 100); joyColorCtx.fillText('Color B', 90, 100);
-            joyColorCtx.fillText('Color A', 166, 100); joyColorCtx.fillText('Color B', 218, 100);
-            
+            for (let hand = 0; hand < 2; hand++) {
+                const x = hand === 0 ? 12 : 260;
+                const target = hand === 0 ? joyLTarget : joyRTarget;
+                ctx.fillStyle = '#24352a'; ctx.fillRect(x, 38, 240, 147);
+                ctx.strokeStyle = '#637c63'; ctx.lineWidth = 2; ctx.strokeRect(x, 38, 240, 147);
+                ctx.font = 'bold 18px Consolas,monospace'; ctx.fillStyle = '#b4e58b';
+                ctx.fillText(`${hand === 0 ? 'LEFT' : 'RIGHT'} / ${joystickModes[hand].toUpperCase()}`, x + 10, 56);
+                if (target < 0 || target > 3) {
+                    ctx.font = '16px Consolas,monospace'; ctx.fillStyle = '#aeb8ac';
+                    ctx.fillText('NOT ASSIGNED', x + 15, 112);
+                    continue;
+                }
+                const c = colorControl[target];
+                const slot = target >> 1, sub = target & 1;
+                ctx.font = 'bold 15px Consolas,monospace'; ctx.fillStyle = '#f0e8d3';
+                ctx.fillText(`SLOT ${slot + 1} / ${sub ? 'B' : 'A'}`, x + 12, 80);
+                ctx.fillStyle = '#' + slotColors[slot][sub].getHexString();
+                ctx.fillRect(x + 12, 94, 65, 65);
+                ctx.strokeStyle = '#f0e8d3'; ctx.lineWidth = 2; ctx.strokeRect(x + 12, 94, 65, 65);
+                ctx.font = '16px Consolas,monospace'; ctx.fillStyle = '#f0e8d3';
+                ctx.fillText(`H ${Math.round(c.h * 360)}°`, x + 88, 102);
+                ctx.fillText(`S ${Math.round(c.s * 100)}%`, x + 88, 125);
+                ctx.fillText(`L ${Math.round(c.l * 100)}%`, x + 88, 148);
+                ctx.font = 'bold 12px Consolas,monospace'; ctx.fillStyle = (c.hueLock || c.lightLock) ? '#ffb064' : '#aeb8ac';
+                ctx.fillText(`${c.hueLock ? 'H LOCK' : 'H OPEN'}  ${c.lightLock ? 'L LOCK' : 'L OPEN'}`, x + 12, 174);
+            }
+            ctx.font = 'bold 11px Consolas,monospace'; ctx.fillStyle = '#aeb8ac'; ctx.textAlign = 'center';
+            ctx.fillText('CLICK STICK TO SWITCH HUE / SAT', 256, 193);
+            ctx.font = 'bold 12px Consolas,monospace'; ctx.textBaseline = 'middle';
+            for (let i = 0; i < 4; i++) {
+                const x = 16 + i * 124, slot = i >> 1, sub = i & 1;
+                ctx.fillStyle = '#' + slotColors[slot][sub].getHexString(); ctx.fillRect(x, 201, 106, 27);
+                ctx.strokeStyle = (joyLTarget === i || joyRTarget === i) ? '#ffffff' : '#5a685b';
+                ctx.lineWidth = (joyLTarget === i || joyRTarget === i) ? 3 : 1;
+                ctx.strokeRect(x, 201, 106, 27);
+                ctx.fillStyle = '#f0e8d3'; ctx.textAlign = 'center';
+                ctx.fillText(`${slot + 1}${sub ? 'B' : 'A'}`, x + 53, 238);
+            }
             joyColorTexture.needsUpdate = true;
+        }
+
+        function showColorFeedback(forceRefresh = false) {
+            if (!renderer.xr.isPresenting) return;
+            const now = performance.now();
+            const wasHidden = !joyColorMesh.visible;
+            joyColorMesh.visible = true;
+            joyColorActiveTimer = now + 1700;
+            if (forceRefresh) joyColorDirty = true;
+            if (joyColorDirty && (forceRefresh || wasHidden || now - lastJoyTextureUpdateTime >= 75)) {
+                updateJoyColorTexture();
+                lastJoyTextureUpdateTime = now;
+                joyColorDirty = false;
+            }
         }
 
         // Three navigation groups: tool count unchanged, but selection is now task-oriented.
@@ -2843,7 +3009,7 @@ if (cy >= 60 && cy <= 90) {
                 toolMenuButton(262,537,223,39,'RECENT / EDIT',false,()=>setToolMenuPage('edit'));
             }
             rightMenuCtx.fillStyle=studioPalette.muted;rightMenuCtx.textAlign='center';rightMenuCtx.font='700 10px Consolas,monospace';
-            rightMenuCtx.fillText('A = TOOL OPTIONS   B = MATERIAL DECK',256,588);
+            rightMenuCtx.fillText(inPointSheet() ? 'X ENDS AN ACTIVE POINT SHEET' : 'A = TOOL OPTIONS   B = MATERIAL DECK',256,588);
             rightMenuTexture.needsUpdate=true;
         }
         updateRightMenuTexture();
@@ -3638,6 +3804,11 @@ if (cy >= 60 && cy <= 90) {
                     wq: [worldGroup.quaternion.x, worldGroup.quaternion.y, worldGroup.quaternion.z, worldGroup.quaternion.w],
                     ws: [worldGroup.scale.x, worldGroup.scale.y, worldGroup.scale.z],
                     ms: [activeMatSlot, activeColorSubSlot, joyLTarget, joyRTarget],
+                    jc: {
+                        mode: joystickModes.slice(),
+                        hsl: colorControl.map(c => [c.h, c.s, c.l]),
+                        locks: colorControl.map(c => [c.hueLock, c.lightLock])
+                    },
                     mt: [matTypes[0], matTypes[1]],
                     cm: [colorModes[0], colorModes[1]],
                     sc: [
@@ -3954,6 +4125,34 @@ if (cy >= 60 && cy <= 90) {
                     slotColors[1][0].setHex(meta.sc[1][0]);
                     slotColors[1][1].setHex(meta.sc[1][1]);
                 }
+                // Older .VTB projects do not contain joystick state. Rebuild
+                // from their actual palette, then restore extended state if present.
+                joystickModes[0] = joystickModes[1] = 'hue';
+                for (let i = 0; i < 4; i++) {
+                    syncColorControlFromColor(i >> 1, i & 1, false);
+                    colorControl[i].hueLock = false;
+                    colorControl[i].lightLock = false;
+                }
+                if (meta.jc && typeof meta.jc === 'object') {
+                    if (Array.isArray(meta.jc.mode)) {
+                        for (let i = 0; i < 2; i++) if (meta.jc.mode[i] === 'hue' || meta.jc.mode[i] === 'sat') joystickModes[i] = meta.jc.mode[i];
+                    }
+                    for (let i = 0; i < 4; i++) {
+                        const hsl = Array.isArray(meta.jc.hsl) ? meta.jc.hsl[i] : null;
+                        if (Array.isArray(hsl) && hsl.length >= 3 && hsl.slice(0, 3).every(Number.isFinite)) {
+                            colorControl[i].h = wrapHue(hsl[0]);
+                            colorControl[i].s = THREE.MathUtils.clamp(hsl[1], 0, 1);
+                            colorControl[i].l = THREE.MathUtils.clamp(hsl[2], 0, 1);
+                        }
+                        const locks = Array.isArray(meta.jc.locks) ? meta.jc.locks[i] : null;
+                        if (Array.isArray(locks)) {
+                            colorControl[i].hueLock = locks[0] === true;
+                            colorControl[i].lightLock = locks[1] === true;
+                        }
+                    }
+                }
+                colorMenuNeedsUpdate = true;
+                joyColorDirty = true;
                 if (meta.fr) {
                     for (let i = 0; i < 2; i++) {
                         fractalTypes[i] = meta.fr[0][i];
@@ -6888,7 +7087,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                 } else if (colorMenuHovered && colorMenuMesh.visible) {
                     menuClickActive = true;
                     const cx=Math.floor(colorMenuUV.x*512), cy=Math.floor((1-colorMenuUV.y)*512);
-                    if(cy>=140&&cy<=310&&cx>=20&&cx<=492) { isColorPicking=true; isPaletteMagnified=true; updateColorMenuTexture(); } else handleColorMenuClick(cx,cy);
+                    if(isCompactColorPickerHit(cx,cy)) { isColorPicking=true; isPaletteMagnified=true; updateColorMenuTexture(); } else handleColorMenuClick(cx,cy);
                     return;
                 }
             }
@@ -6919,6 +7118,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                 const sampledMat = getVoxelMatAndColor(gx, gy, gz, tempColor);
                 if (sampledMat !== -1) {
                     slotColors[activeMatSlot][activeColorSubSlot].copy(tempColor);
+                    syncColorControlFromColor(activeMatSlot, activeColorSubSlot);
                     matTypes[activeMatSlot] = sampledMat;
                     isDropperActive = false;
                     colorMenuNeedsUpdate = true;
@@ -7177,100 +7377,144 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
         function onSqueezeEnd() { if(this===xrRight) isRightGripping=false; else if(this===xrLeft) isLeftGripping=false;
         }
 
-let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeftBtnY = false;
+        let xConsumedBySheet = false;
+        let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeftBtnY = false;
         let prevRightTriggerValue = 0, prevLeftTriggerValue = 0;
         function pollGamepads() {
             const session = renderer.xr.getSession();
             if (!session) return;
+            const now = performance.now();
+            const dt = lastJoystickFrameTime ? Math.max(0, Math.min(0.05, (now - lastJoystickFrameTime) / 1000)) : 0;
+            lastJoystickFrameTime = now;
             let joyChanged = false;
             let anyJoyActive = false;
-            for (let source of session.inputSources) {
-                if (source && source.gamepad) {
-                    if (source.handedness === 'right') { 
-                        rightTriggerValue = source.gamepad.buttons[0]?.value || (source.gamepad.buttons[0]?.pressed ? 1 : 0);
-                        
-                        // Fire draw logic manually immediately after crossing the deadzone (bypassing the hardware select bound)
-                        if ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode)) {
-                            if (rightTriggerValue > 0.05 && prevRightTriggerValue <= 0.05) onSelectStart.call(xrRight);
-                            else if (rightTriggerValue <= 0.05 && prevRightTriggerValue > 0.05) onSelectEnd.call(xrRight);
-                        }
-                        prevRightTriggerValue = rightTriggerValue;
+            for (const source of session.inputSources) {
+                if (!source || !source.gamepad) continue;
+                const gamepad = source.gamepad;
+                const right = source.handedness === 'right';
+                const left = source.handedness === 'left';
+                if (!right && !left) continue;
+                const hand = right ? 1 : 0;
 
-
-                        const a = source.gamepad.buttons[4]?.pressed ||
-                        false, b = source.gamepad.buttons[5]?.pressed || false; if (leftMenuMesh) leftMenuMesh.visible = a && !b; if (colorMenuMesh) colorMenuMesh.visible = b;
-                        if (a && !lastRightBtnA) leftMenuNeedsUpdate = true; if (b && !lastRightBtnB) colorMenuNeedsUpdate = true; lastRightBtnA = a; lastRightBtnB = b;
+                if (right) {
+                    rightTriggerValue = gamepad.buttons[0]?.value || (gamepad.buttons[0]?.pressed ? 1 : 0);
+                    // Keep the analog-pressure drawing path unchanged.
+                    if ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode)) {
+                        if (rightTriggerValue > 0.05 && prevRightTriggerValue <= 0.05) onSelectStart.call(xrRight);
+                        else if (rightTriggerValue <= 0.05 && prevRightTriggerValue > 0.05) onSelectEnd.call(xrRight);
                     }
-                    if (source.handedness === 'left') { 
-                        leftTriggerValue = source.gamepad.buttons[0]?.value || (source.gamepad.buttons[0]?.pressed ? 1 : 0);
-                        
-                        // Same handling for erasing
-                        if ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode)) {
-                            if (leftTriggerValue > 0.05 && prevLeftTriggerValue <= 0.05) onSelectStart.call(xrLeft);
-                            else if (leftTriggerValue <= 0.05 && prevLeftTriggerValue > 0.05) onSelectEnd.call(xrLeft);
-                        }
-                        prevLeftTriggerValue = leftTriggerValue;
-
-                        const x = source.gamepad.buttons[4]?.pressed ||
-                        false, y = source.gamepad.buttons[5]?.pressed || false; if (rightMenuMesh) rightMenuMesh.visible = x && !y; if (globalMenuMesh) globalMenuMesh.visible = y;
-                        if (x && !lastLeftBtnX) rightMenuNeedsUpdate = true; if (y && !lastLeftBtnY) globalMenuNeedsUpdate = true; lastLeftBtnX = x; lastLeftBtnY = y;
+                    prevRightTriggerValue = rightTriggerValue;
+                    const a = gamepad.buttons[4]?.pressed || false;
+                    const b = gamepad.buttons[5]?.pressed || false;
+                    if (leftMenuMesh) leftMenuMesh.visible = a && !b;
+                    if (colorMenuMesh) colorMenuMesh.visible = b;
+                    if (a && !lastRightBtnA) leftMenuNeedsUpdate = true;
+                    if (b && !lastRightBtnB) colorMenuNeedsUpdate = true;
+                    lastRightBtnA = a; lastRightBtnB = b;
+                } else {
+                    leftTriggerValue = gamepad.buttons[0]?.value || (gamepad.buttons[0]?.pressed ? 1 : 0);
+                    if ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode)) {
+                        if (leftTriggerValue > 0.05 && prevLeftTriggerValue <= 0.05) onSelectStart.call(xrLeft);
+                        else if (leftTriggerValue <= 0.05 && prevLeftTriggerValue > 0.05) onSelectEnd.call(xrLeft);
                     }
-                    const ax = source.gamepad.axes;
-                    if (ax && ax.length >= 2) { 
-                        const xVal = ax.length >= 4 ? ax[2] : ax[0], yVal = ax.length >= 4 ? ax[3] : ax[1], dead = 0.15;
-                        if (hasSelection && transformMode === 'free' && source.handedness === 'right' && Math.abs(yVal) > dead) {
+                    prevLeftTriggerValue = leftTriggerValue;
+                    const x = gamepad.buttons[4]?.pressed || false;
+                    const y = gamepad.buttons[5]?.pressed || false;
+                    if (!x) xConsumedBySheet = false;
+                    if (x && !lastLeftBtnX && !y && inPointSheet() && lastArcPoints.length > 0) {
+                        endPointSheet();
+                        xConsumedBySheet = true;
+                    }
+                    if (rightMenuMesh) rightMenuMesh.visible = x && !y && !xConsumedBySheet;
+                    if (globalMenuMesh) globalMenuMesh.visible = y;
+                    if (x && !lastLeftBtnX) rightMenuNeedsUpdate = true;
+                    if (y && !lastLeftBtnY) globalMenuNeedsUpdate = true;
+                    lastLeftBtnX = x; lastLeftBtnY = y;
+                }
+
+                // WebXR standard gamepad mapping: button 3 = thumbstick click.
+                // Do not steal right-stick actions from Free Transform selections.
+                const rightStickReserved = right && hasSelection && transformMode === 'free';
+                const thumbPressed = !!gamepad.buttons[3]?.pressed;
+                if (thumbPressed && !lastThumbstickPressed[hand] && !rightStickReserved) {
+                    toggleJoystickMode(hand);
+                }
+                lastThumbstickPressed[hand] = thumbPressed;
+
+                const axes = gamepad.axes;
+                if (!axes || axes.length < 2) continue;
+                const xVal = Number(axes.length >= 4 ? axes[2] : axes[0]) || 0;
+                const yVal = Number(axes.length >= 4 ? axes[3] : axes[1]) || 0;
+                if (rightStickReserved) {
+                    if (Math.abs(yVal) > JOYSTICK_DEADZONE && dt > 0) {
+                        const nextScale = Math.max(0.1, Math.min(5.0, selectionScale - yVal * 4.5 * dt));
+                        if (nextScale !== selectionScale) {
                             ensureBaseSelectionRemoved();
-                            selectionScale = Math.max(0.1, Math.min(5.0, selectionScale - yVal * 0.05));
+                            selectionScale = nextScale;
                             updateRotatedSelection();
                             leftMenuNeedsUpdate = true;
-                        } else if (Math.abs(xVal) > dead || Math.abs(yVal) > dead) { 
-                            const targetIdx = source.handedness === 'right' ?
-                            joyRTarget : joyLTarget;
-                            if (targetIdx !== -1) {
-                                const s = Math.floor(targetIdx / 2), sub = targetIdx % 2, trackerIdx = source.handedness === 'right' ?
-                                0 : 1;
-                                const tc = slotColors[s][sub]; tc.getHSL(tempHSL);
-                                if (tempHSL.l > 0.01 && tempHSL.l < 0.99) { joystickTracker[trackerIdx].h = tempHSL.h;
-                                joystickTracker[trackerIdx].s = tempHSL.s; }
-                                if (Math.abs(xVal) > dead) { joystickTracker[trackerIdx].h += (xVal * 0.005);
-                                if (joystickTracker[trackerIdx].h > 1) joystickTracker[trackerIdx].h -= 1; if (joystickTracker[trackerIdx].h < 0) joystickTracker[trackerIdx].h += 1;
-                                if (joystickTracker[trackerIdx].s < 0.1) joystickTracker[trackerIdx].s = 0.8; }
-                                let nL = tempHSL.l;
-                                if (Math.abs(yVal) > dead) { nL -= (yVal * 0.005); nL = Math.max(0, Math.min(1, nL));
-                                }
-                                tc.setHSL(joystickTracker[trackerIdx].h, joystickTracker[trackerIdx].s, nL);
-                                anyJoyActive = true; joyChanged = true;
-                            }
-                        } 
+                        }
+                    }
+                    continue;
+                }
+
+                const shapedX = joystickResponse(xVal);
+                const shapedY = joystickResponse(yVal);
+                if (shapedX === 0 && shapedY === 0) continue;
+                const target = right ? joyRTarget : joyLTarget;
+                if (target < 0 || target > 3) continue;
+                anyJoyActive = true;
+                if (dt === 0) continue;
+                const c = colorControl[target];
+                let changed = false;
+                if (shapedX !== 0) {
+                    if (joystickModes[hand] === 'hue') {
+                        if (!c.hueLock) {
+                            c.h = wrapHue(c.h + shapedX * HUE_RATE * dt);
+                            changed = true;
+                        }
+                    } else {
+                        const sat = Math.max(0, Math.min(1, c.s + shapedX * SAT_RATE * dt));
+                        if (sat !== c.s) { c.s = sat; changed = true; }
                     }
                 }
+                if (shapedY !== 0 && !c.lightLock) {
+                    const light = Math.max(0, Math.min(1, c.l - shapedY * LIGHT_RATE * dt));
+                    if (light !== c.l) { c.l = light; changed = true; }
+                }
+                if (changed) {
+                    applyControlledColor(target);
+                    joyChanged = true;
+                }
             }
-            
-            if (joyChanged) { 
-                // Force pressure size recalculation by invalidating the cache
+            if (joyChanged) {
+                joyColorDirty = true;
                 lastRightEffSize = -1;
                 lastLeftEffSize = -1;
-                updateCursors(); 
-                if (Date.now() - lastColorJoystickUpdateTime > 50) { 
-                    colorMenuNeedsUpdate = true; 
-                    lastColorJoystickUpdateTime = Date.now();
-                } 
-            }
-            
-            if (anyJoyActive) {
-                joyColorActiveTimer = Date.now() + 1500; // Keep UI active for 1.5 seconds after stopping
-                const indicatorWasHidden = !joyColorMesh.visible;
-                joyColorMesh.visible = true;
-                const uiNow = performance.now();
-                if(indicatorWasHidden || uiNow-lastJoyTextureUpdateTime>=75){
-                    updateJoyColorTexture();
-                    lastJoyTextureUpdateTime=uiNow;
+                updateCursors();
+                if (now - lastColorJoystickUpdateTime > 60) {
+                    colorMenuNeedsUpdate = true;
+                    lastColorJoystickUpdateTime = now;
                 }
-            } else if (joyColorMesh.visible && Date.now() > joyColorActiveTimer) {
-                joyColorMesh.visible = false;
             }
+            if (anyJoyActive) showColorFeedback();
+            else if (joyColorMesh.visible && now > joyColorActiveTimer) joyColorMesh.visible = false;
         }
-        
+
+        renderer.xr.addEventListener('sessionstart', () => {
+            lastLeftBtnX = xConsumedBySheet = false;
+            lastJoystickFrameTime = 0;
+            lastThumbstickPressed[0] = false;
+            lastThumbstickPressed[1] = false;
+        });
+        renderer.xr.addEventListener('sessionend', () => {
+            joyColorMesh.visible = false;
+            lastLeftBtnX = xConsumedBySheet = false;
+            lastJoystickFrameTime = 0;
+            lastThumbstickPressed[0] = false;
+            lastThumbstickPressed[1] = false;
+        });
+
         let lastRightEffSize = -1;
         let lastLeftEffSize = -1;
         let lastDrawnRightEffSize = -1;
