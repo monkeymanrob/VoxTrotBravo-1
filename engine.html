@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo v4.3
+    VoxTrotBravo v4.4
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo v4.3</title>
+    <title>VoxTrotBravo v4.4</title>
     <style>
 :root{color-scheme:dark;--ink:#f0e8d3;--muted:#aeb8ac;--accent:#ffb064;--accent2:#b4e58b;--surface:#1b2521;--line:#56685a}
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111715;color:var(--ink);font-family:Consolas,'Lucida Console',monospace}canvas{display:block}button{font:inherit}
@@ -55,20 +55,20 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
 </head>
 <body>
     <div id="loading-overlay">
-        <h2>VoxTrotBravo v4.3</h2>
+        <h2>VoxTrotBravo v4.4</h2>
         <p>Preparing studio…</p>
         <div class="spinner"></div>
     </div>
 
     <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
-        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.3</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.4</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
         <div class="ui-content"><div class="eyebrow">Controller quick guide</div>
             <div class="command-rows">
                 <div class="command"><b>A · Right</b><span>Current tool settings / rotate</span></div>
                 <div class="command"><b>B · Right</b><span>Material and color controls</span></div>
                 <div class="command"><b>X · Left</b><span>Mark / Forms / Edit tool index</span></div>
                 <div class="command"><b>Y · Left</b><span>Studio / symmetry / arrays / files</span></div>
-                <div class="command"><b>Triggers</b><span>Right to draw/select · left to erase/drop</span></div>
+                <div class="command"><b>Triggers</b><span>Right to draw/select · left to erase/drop · hold left in Line to pin its start</span></div>
                 <div class="command"><b>Grips</b><span>Move, scale and rotate the world</span></div>
             </div>
             <div class="shortcut-foot"><strong>Precision:</strong> Tap 1°, 5°, or 15° in Select options or the Studio panel. Exact rotation nudges are available on A.<br>© 2024–2026 Rob Reynolds. All rights reserved.</div>
@@ -273,6 +273,15 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
 
 
         // New Line Tool State
+        const lineAnchor = new THREE.Vector3();
+        let lineAnchorHeld = false;
+        let leftUtilityPress = false; // A pin or menu press owns its release, even across tool changes.
+        function lineLeftEnd() {
+            return lineAnchorHeld ? lineAnchor : leftTargetLocal;
+        }
+        function lineStrokeStart() {
+            return lineAnchorHeld || (lineMode === 'two-hand' && xrLeft) ? lineLeftEnd() : drawStartPos;
+        }
         let lineMode = 'two-hand'; // 'one-hand' or 'two-hand'
         let lineType = 'straight';  // 'straight' or 'arc'
         let lineDrawMode = 'stroke'; // 'stroke' or 'sheet'
@@ -488,6 +497,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         const drawStartPos = new THREE.Vector3();
         const lineStartLeft = new THREE.Vector3(Infinity, Infinity, Infinity);
         const lineStartRight = new THREE.Vector3(Infinity, Infinity, Infinity);
+        let lastSheetBulge = NaN;
         const lastSheetLeftPos = new THREE.Vector3(Infinity, Infinity, Infinity);
         const lastSheetRightPos = new THREE.Vector3(Infinity, Infinity, Infinity);
 
@@ -1978,7 +1988,8 @@ function updatePlanePreview(start, end, isPainting) {
             const activeInfo=studioTools.find(item=>item.id===activeTool);
             studioHeader(leftMenuCtx,activeInfo?.name || activeTool,'A / TOOL OPTIONS');
             leftMenuCtx.fillStyle=studioPalette.muted;leftMenuCtx.textAlign='center';leftMenuCtx.font='11px system-ui,sans-serif';
-            if(!(activeTool==='select'&&hasSelection&&transformMode==='copy')) leftMenuCtx.fillText('X TO CHANGE TOOLS / B FOR COLORS',256,503);
+            if (activeTool === 'line') leftMenuCtx.fillText(lineAnchorHeld ? 'LEFT END PINNED' : 'HOLD LEFT TRIGGER TO PIN START',256,503);
+            else if(!(activeTool==='select'&&hasSelection&&transformMode==='copy')) leftMenuCtx.fillText('X TO CHANGE TOOLS / B FOR COLORS',256,503);
         if (activeTool === 'brush') {
             drawButton(leftMenuCtx, 50, 70, 130, 50, 'CUBE', strokeSettings.brush.shape === 'cube'); 
             drawButton(leftMenuCtx, 190, 70, 130, 50, 'SPHERE', strokeSettings.brush.shape === 'sphere');
@@ -2033,7 +2044,7 @@ function updatePlanePreview(start, end, isPainting) {
 
             const radiusLocked = (lineDrawMode === 'sheet');
             drawButton(leftMenuCtx, 50, 310, 80, 40, '[-]', false); 
-            drawButton(leftMenuCtx, 140, 310, 232, 40, radiusLocked ? `Radius: LOCKED` : `Radius: ${strokeSettings.line.size}`, radiusLocked); 
+            drawButton(leftMenuCtx, 140, 310, 232, 40, radiusLocked ? (lineSheetType === 'point' ? 'NEW SHEET' : 'Radius: LOCKED') : `Radius: ${strokeSettings.line.size}`, radiusLocked); 
             drawButton(leftMenuCtx, 382, 310, 80, 40, '[+]', false);
 
             drawButton(leftMenuCtx, 50, 355, 200, 40, 'Shape: CUBE', strokeSettings.line.shape === 'cube'); 
@@ -2353,6 +2364,9 @@ if (cy >= 60 && cy <= 90) {
                 else if (cy >= 135 && cy <= 175) { if (cx >= 50 && cx <= 250) { if (lineType !== 'straight') { lineType = 'straight'; lastArcPoints = []; } } if (cx >= 262 && cx <= 462) { if (lineType !== 'arc') { lineType = 'arc'; lastArcPoints = []; } } }  
                 else if (cy >= 180 && cy <= 220) { if (cx >= 50 && cx <= 250) arcControlMode = 'dynamic'; if (cx >= 262 && cx <= 462) arcControlMode = 'manual'; }
                 else if (cy >= 310 && cy <= 350) { 
+                    if (lineDrawMode === 'sheet' && lineSheetType === 'point' && cx >= 140 && cx <= 372) {
+                        lastArcPoints.length = 0;
+                    }
                     if (lineDrawMode !== 'sheet') {
                         if (cx >= 50 && cx <= 130) strokeSettings.line.size = Math.max(1, strokeSettings.line.size - 1); 
                         if (cx >= 382 && cx <= 462) strokeSettings.line.size = Math.min(20, strokeSettings.line.size + 1); 
@@ -2839,6 +2853,7 @@ if (cy >= 60 && cy <= 90) {
             if(hasSelection)applySelection();
             isPreviewingExtrude=isPreviewingBox=isPreviewingSphere=isPreviewingPlane=isPreviewingTriangle=isPreviewingCylinder=isPreviewingTorus=isPreviewingIcosahedron=false;
             hideAllPreviews();bucketPreviewMesh.visible=linePreviewMesh.visible=false;
+            lineAnchorHeld = false;
             activeTool=toolId;
             toolMenuPage=Object.entries(toolMenuGroups).find(([_,ids])=>ids.includes(toolId))?.[0]||'mark';
             lastToolByPage[toolMenuPage] = toolId;
@@ -4136,6 +4151,7 @@ if (cy >= 60 && cy <= 90) {
                 updateCursors();
                 flushDirtyChunks();
                 leftMenuNeedsUpdate = rightMenuNeedsUpdate = colorMenuNeedsUpdate = globalMenuNeedsUpdate = true;
+                lineAnchorHeld = false;
                 restoreToolHistory(meta.tl || {});
                 lastArcPoints.length = 0;
                 syncDesktopToolButtons();
@@ -6819,6 +6835,26 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
             // Completely bypass native select events when analog pressure is driving the brush or sculpt
             if (event && ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode))) return;
             
+            if (this === xrLeft) {
+                if (leftUtilityPress) return;
+                if (rightMenuHovered && rightMenuMesh.visible) {
+                    leftUtilityPress = true;
+                    handleRightMenuClick(Math.floor(rightMenuUV.x * 512), Math.floor((1 - rightMenuUV.y) * 600));
+                    return;
+                }
+                if (globalMenuHovered && globalMenuMesh.visible) {
+                    leftUtilityPress = true;
+                    handleGlobalMenuClick(Math.floor(globalMenuUV.x * 512), Math.floor((1 - globalMenuUV.y) * 1024));
+                    return;
+                }
+                if (activeTool === 'line') {
+                    lineAnchor.copy(leftTargetLocal);
+                    leftUtilityPress = lineAnchorHeld = true;
+                    leftMenuNeedsUpdate = true;
+                    return;
+                }
+            }
+
             menuClickActive = false; // Reset on every press
             if (spareStrokeBuffer) {
                 spareStrokeBuffer.count = 0;
@@ -6855,11 +6891,8 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                     if(cy>=140&&cy<=310&&cx>=20&&cx<=492) { isColorPicking=true; isPaletteMagnified=true; updateColorMenuTexture(); } else handleColorMenuClick(cx,cy);
                     return;
                 }
-		} else if (this === xrLeft) { 
-                if (rightMenuHovered && rightMenuMesh.visible) { menuClickActive = true; handleRightMenuClick(Math.floor(rightMenuUV.x*512),Math.floor((1-rightMenuUV.y)*600)); return; }
-                else if (globalMenuHovered && globalMenuMesh.visible) { menuClickActive = true; handleGlobalMenuClick(Math.floor(globalMenuUV.x*512),Math.floor((1-globalMenuUV.y)*1024)); return; }
-		}
-            
+            }
+
             const startTarget = (this === xrRight) ? rightTargetLocal : leftTargetLocal;
             lockCtx.startG.x = Math.round(startTarget.x / VOXEL_SIZE);
             lockCtx.startG.y = Math.round(startTarget.y / VOXEL_SIZE);
@@ -6952,8 +6985,8 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                     if(activeTool==='line' && lineDrawMode === 'sheet' && lineSheetType === 'point' && xrLeft && xrRight) {
                         isDrawing=false;
                         const currentPoints = [];
-                        if (lineType === 'arc') calculateArcPoints(leftTargetLocal, rightTargetLocal, xrLeft, xrRight, currentPoints, 24);
-                        else { currentPoints.push(leftTargetLocal.clone(), rightTargetLocal.clone()); }
+                        if (lineType === 'arc') calculateArcPoints(lineLeftEnd(), rightTargetLocal, xrLeft, xrRight, currentPoints, 24);
+                        else { currentPoints.push(lineLeftEnd().clone(), rightTargetLocal.clone()); }
 
                         const segCount = Math.max(1, currentPoints.length - 1);
                         if (lastArcPoints.length > 0 && lastArcPoints.length === currentPoints.length) {
@@ -6961,7 +6994,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                                 drawSheetQuad(lastArcPoints[i], lastArcPoints[i+1], currentPoints[i], currentPoints[i+1], true, lineRadius(), i / segCount, (i + 1) / segCount);
                             }
                         } else {
-                            executeLineTool(leftTargetLocal, rightTargetLocal, true);
+                            executeLineTool(lineLeftEnd(), rightTargetLocal, true);
                         }
                         
                         if (currentStrokeChanges && currentStrokeChanges.count > 0) {
@@ -6982,14 +7015,6 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                 }
             } else if (this === xrLeft) {
                 if(activeTool==='select'&&hasSelection) applySelection(); else { 
-
-                    if(activeTool==='line' && lineDrawMode === 'sheet' && lineSheetType === 'point') {
-                        lastArcPoints = [];
-                        currentStrokeChanges = null;
-                        currentStrokeVoxelTracker = null;
-                        lockCtx.active = false;
-                        return; 
-                    }
 
                     isErasing=true;  
                     drawStartPos.copy(leftTargetLocal); 
@@ -7020,9 +7045,17 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
         }
 
         function onSelectEnd(event) {
+            if (this === xrLeft && leftUtilityPress) {
+                // In pressure mode the analog release owns the gesture.
+                if (event && ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode))) return;
+                leftUtilityPress = lineAnchorHeld = false;
+                leftMenuNeedsUpdate = true;
+                return;
+            }
             // Completely bypass native select events when analog pressure is driving the brush or sculpt
             if (event && ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode))) return;
 
+            if (this === xrLeft && !isErasing && activeTool === 'line') return;
             // Commit logic moved to bottom of function
             if (this === xrRight) { 
                 if(activeSliderDrag) activeSliderDrag=null;
@@ -7033,7 +7066,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                     
                     if(activeTool==='line') {
                         if (!menuClickActive && lineDrawMode === 'stroke' && (linePreviewMesh.visible || lineWireframeMesh.visible)) {
-                            let pStart = (lineMode === 'two-hand' && xrLeft) ? leftTargetLocal : drawStartPos;
+                            let pStart = lineStrokeStart();
                             executeLineTool(pStart, rightTargetLocal, true);
                         }
                         linePreviewMesh.visible=false;
@@ -7057,17 +7090,6 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
             else if (this === xrLeft) { 
                 isErasing=false;
                 
-                if(activeTool==='line') { 
-                    if (lineDrawMode === 'stroke' && (linePreviewMesh.visible || lineWireframeMesh.visible)) {
-                        let pStart = (lineMode === 'two-hand' && xrRight) ? rightTargetLocal : drawStartPos;
-                        executeLineTool(pStart, leftTargetLocal, false);
-                    }
-                    linePreviewMesh.visible=false;
-                    lineWireframeMesh.visible=false;
-                    if (lineSheetType !== 'point') lastArcPoints = [];
-                }
-
-
                 if(activeTool==='box'&&isPreviewingBox){ executeBoxTool(drawStartPos,leftTargetLocal,false); isPreviewingBox=false; boxPreviewMesh.visible=false; } 
                 if(activeTool==='extrude'&&isPreviewingExtrude){ executeExtrudeTool(drawStartPos,leftTargetLocal,false); isPreviewingExtrude=false; boxPreviewMesh.visible=false; }
 
@@ -7125,6 +7147,12 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
 
 
         for (const [controller, grip] of [[controller0, grip0], [controller1, grip1]]) {
+            controller.addEventListener('disconnected', () => {
+                if (controller === xrLeft) {
+                    leftUtilityPress = lineAnchorHeld = false;
+                    leftMenuNeedsUpdate = true;
+                }
+            });
             controller.addEventListener('connected', ({data}) => {
                 if (data.handedness === 'right') {
                     xrRight = controller; gripRight = grip;
@@ -7135,6 +7163,10 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                 }
             });
         }
+        renderer.xr.addEventListener('sessionend', () => {
+            leftUtilityPress = lineAnchorHeld = false;
+            leftMenuNeedsUpdate = true;
+        });
         controller0.addEventListener('selectstart', onSelectStart); controller1.addEventListener('selectstart', onSelectStart);
         controller0.addEventListener('selectend', onSelectEnd); controller1.addEventListener('selectend', onSelectEnd);
         controller0.addEventListener('squeezestart', onSqueezeStart); controller1.addEventListener('squeezestart', onSqueezeStart);
@@ -7310,7 +7342,7 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                 
                 if(xrLeft){ 
                     leftTargetLocal.copy(leftPointerPos).addScaledVector(leftDir,0.05); worldGroup.worldToLocal(leftTargetLocal); leftTargetLocal.set(Math.round(leftTargetLocal.x/VOXEL_SIZE)*VOXEL_SIZE,Math.round(leftTargetLocal.y/VOXEL_SIZE)*VOXEL_SIZE,Math.round(leftTargetLocal.z/VOXEL_SIZE)*VOXEL_SIZE); 
-                    cursorLeft.position.copy(leftTargetLocal); 
+                    cursorLeft.position.copy(lineAnchorHeld ? lineAnchor : leftTargetLocal); 
                     if (strokeSettings.brush.shape === 'ribbon' && activeTool === 'brush') {
                         worldGroup.getWorldQuaternion(tempCursorWQuat).invert();
                         xrLeft.getWorldQuaternion(tempCursorCQuat);
@@ -7411,16 +7443,18 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                     hideAllPreviews();
                     if (activeTool === 'line') {
                         hideAllPreviews();
-                        let pStart = (lineMode === 'two-hand' && xrLeft) ? leftTargetLocal : drawStartPos;
+                        let pStart = lineStrokeStart();
                         let pEnd = rightTargetLocal;
 
                         if (lineDrawMode === 'sheet' && lineMode === 'two-hand' && xrLeft && xrRight) {
-                            if (!leftTargetLocal.equals(lastSheetLeftPos) || !rightTargetLocal.equals(lastSheetRightPos) || lastArcPoints.length === 0) {
-                                lastSheetLeftPos.copy(leftTargetLocal);
+                            const bulgeChanged = lineType === 'arc' && arcBulge !== lastSheetBulge;
+                            if (bulgeChanged || !lineLeftEnd().equals(lastSheetLeftPos) || !rightTargetLocal.equals(lastSheetRightPos) || lastArcPoints.length === 0) {
+                                lastSheetBulge = arcBulge;
+                                lastSheetLeftPos.copy(lineLeftEnd());
                                 lastSheetRightPos.copy(rightTargetLocal);
                                 const currentPoints = [];
-                                if (lineType === 'arc') calculateArcPoints(leftTargetLocal, rightTargetLocal, xrLeft, xrRight, currentPoints, 24);
-                                else { currentPoints.push(leftTargetLocal.clone(), rightTargetLocal.clone()); }
+                                if (lineType === 'arc') calculateArcPoints(lineLeftEnd(), rightTargetLocal, xrLeft, xrRight, currentPoints, 24);
+                                else { currentPoints.push(lineLeftEnd().clone(), rightTargetLocal.clone()); }
                                 
                                 if (lastArcPoints.length === currentPoints.length) {
                                     const segCount = Math.max(1, currentPoints.length - 1);
@@ -7560,35 +7594,7 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                 }
                 if(xrLeft&&isErasing&&!isColorPicking){ 
                     hideAllPreviews();
-                    if (activeTool === 'line') {
-                        let pStart = (lineMode === 'two-hand' && xrRight) ? rightTargetLocal : drawStartPos;
-                        let pEnd = leftTargetLocal;
-
-                        if (lineDrawMode === 'sheet' && lineMode === 'two-hand' && xrLeft && xrRight) {
-                            const currentPoints = [];
-                            if (lineType === 'arc') calculateArcPoints(leftTargetLocal, rightTargetLocal, xrLeft, xrRight, currentPoints, 24);
-                            else { currentPoints.push(leftTargetLocal.clone(), rightTargetLocal.clone()); }
-
-                            if (lastArcPoints.length === currentPoints.length) {
-                                const segCount = Math.max(1, currentPoints.length - 1);
-                                for (let i = 0; i < segCount; i++) {
-                                    drawSheetQuad(lastArcPoints[i], lastArcPoints[i+1], currentPoints[i], currentPoints[i+1], false, lineRadius(), i / segCount, (i + 1) / segCount);
-                                }
-                            }
-                            lastArcPoints = currentPoints.map(p => p.clone());
-                        } else if (isErasing || (lineMode === 'two-hand' && !isDrawing)) {
-                            if (lineType === 'arc') {
-                                const arcPoints = [];
-                                const arcUp = calculateArcPoints(pStart, pEnd, xrRight, xrLeft, arcPoints); 
-                                updateLinePreviewFromPoints(arcPoints, false, arcUp);
-                            } else {
-                                updateLinePreviewMesh(pStart, pEnd, false);
-                                linePreviewMesh.visible = true;
-                            }
-                        }
-                    }
-
-                    else if(activeTool==='brush'){ 
+                    if(activeTool==='brush'){ 
                         const lEff = getEffectiveBrushSize(false);
                         if(lastErasedPos.x === Infinity){ 
                             xrLeft.getWorldQuaternion(lastErasedQuatLeft);
@@ -7632,16 +7638,16 @@ let lastRightBtnA = false, lastRightBtnB = false, lastLeftBtnX = false, lastLeft
                     else if(activeTool==='icosahedron'&&isPreviewingIcosahedron) updateIcosahedronPreview(drawStartPos,leftTargetLocal,false); 
                 }
                 // --- Updated: Two-Handed Arc & Sheet Preview ---
-                if (activeTool === 'line' && lineMode === 'two-hand' && !isDrawing && !isErasing && xrLeft && xrRight) {
+                if (activeTool === 'line' && (lineMode === 'two-hand' || lineAnchorHeld) && !isDrawing && !isErasing && xrLeft && xrRight) {
                     hideAllPreviews();
                     const up = new THREE.Vector3(0, 1, 0); 
                     const currentPoints = [];
                     
                     if (lineType === 'arc') {
                         const fixedSteps = (lineDrawMode === 'sheet' && lineSheetType === 'point' && lastArcPoints.length > 0) ? lastArcPoints.length - 1 : 0;
-                        up.copy(calculateArcPoints(leftTargetLocal, rightTargetLocal, xrLeft, xrRight, currentPoints, fixedSteps));
+                        up.copy(calculateArcPoints(lineLeftEnd(), rightTargetLocal, xrLeft, xrRight, currentPoints, fixedSteps));
                     } else {
-                        currentPoints.push(leftTargetLocal.clone(), rightTargetLocal.clone());
+                        currentPoints.push(lineLeftEnd().clone(), rightTargetLocal.clone());
                     }                    
                     // If in Point Mode and we have a starting rib, show a lightweight Wireframe "X" preview
                     if (lineDrawMode === 'sheet' && lineSheetType === 'point' && lastArcPoints.length > 0 && lastArcPoints.length === currentPoints.length) {
