@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo v4.7
+    VoxTrotBravo v4.8
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo v4.7</title>
+    <title>VoxTrotBravo v4.8</title>
     <style>
 :root{color-scheme:dark;--ink:#f0e8d3;--muted:#aeb8ac;--accent:#ffb064;--accent2:#b4e58b;--surface:#1b2521;--line:#56685a}
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111715;color:var(--ink);font-family:Consolas,'Lucida Console',monospace}canvas{display:block}button{font:inherit}
@@ -55,13 +55,13 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
 </head>
 <body>
     <div id="loading-overlay">
-        <h2>VoxTrotBravo v4.7</h2>
+        <h2>VoxTrotBravo v4.8</h2>
         <p>Preparing studio…</p>
         <div class="spinner"></div>
     </div>
 
     <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
-        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.7</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.8</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
         <div class="ui-content"><div class="eyebrow">Controller quick guide</div>
             <div class="command-rows">
                 <div class="command"><b>A · Right</b><span>Current tool settings / rotate</span></div>
@@ -822,9 +822,9 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         // Use Lambert shading for standard matte clay to bypass per-pixel PMREM envMap lookups in VR stereo
         const matSolid = new THREE.MeshLambertMaterial({ depthFunc: THREE.LessEqualDepth }); 
         const matGlass = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.35, depthWrite: false, depthFunc: THREE.LessEqualDepth }); 
-        // A luminous colored core under a glossy surface, in the existing instanced draw.
-        const matEmission = new THREE.MeshStandardMaterial({
-            roughness: 0.15, metalness: 0.08, envMapIntensity: 0.85, depthFunc: THREE.LessEqualDepth
+        // Unlit neon face shading in the existing instanced draw.
+        const matEmission = new THREE.MeshBasicMaterial({
+            depthFunc: THREE.LessEqualDepth
         });
         matEmission.onBeforeCompile = shader => {
             shader.vertexShader = 'varying vec2 neonFace;\n' + shader.vertexShader.replace(
@@ -833,14 +833,13 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 neonFace = abs(normal.x) > 0.5 ? position.yz : (abs(normal.y) > 0.5 ? position.xz : position.xy);`
             );
             shader.fragmentShader = 'varying vec2 neonFace;\n' + shader.fragmentShader.replace(
-                '#include <emissivemap_fragment>',
-                `#include <emissivemap_fragment>
+                '#include <color_fragment>',
+                `#include <color_fragment>
                 float edge = max(abs(neonFace.x), abs(neonFace.y));
                 float core = 1.0 - smoothstep(0.22, 0.51, edge);
                 vec3 tint = diffuseColor.rgb;
                 float peak = max(tint.r, max(tint.g, tint.b));
-                totalEmissiveRadiance = tint * (0.42 + 0.92 * core) + vec3(0.19 * peak * core * core);
-                diffuseColor.rgb *= 0.25;`
+                diffuseColor.rgb = tint * (0.42 + 0.92 * core) + vec3(0.19 * peak * core * core);`
             );
         }; 
         const matMetal = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 1.0, depthFunc: THREE.LessEqualDepth });
