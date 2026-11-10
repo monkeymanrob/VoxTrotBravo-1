@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo v4.8
+    VoxTrotBravo v4.9
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo v4.8</title>
+    <title>VoxTrotBravo v4.9</title>
     <style>
 :root{color-scheme:dark;--ink:#f0e8d3;--muted:#aeb8ac;--accent:#ffb064;--accent2:#b4e58b;--surface:#1b2521;--line:#56685a}
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111715;color:var(--ink);font-family:Consolas,'Lucida Console',monospace}canvas{display:block}button{font:inherit}
@@ -55,13 +55,13 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
 </head>
 <body>
     <div id="loading-overlay">
-        <h2>VoxTrotBravo v4.8</h2>
+        <h2>VoxTrotBravo v4.9</h2>
         <p>Preparing studio…</p>
         <div class="spinner"></div>
     </div>
 
     <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
-        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.8</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.9</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
         <div class="ui-content"><div class="eyebrow">Controller quick guide</div>
             <div class="command-rows">
                 <div class="command"><b>A · Right</b><span>Current tool settings / rotate</span></div>
@@ -652,7 +652,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
             canvas: canvas, 
             ...(gl ? {context: gl} : {}),
             alpha: true, 
-            antialias: false, 
+            antialias: true, 
             powerPreference: "high-performance" 
         });
         renderer.setPixelRatio(1);
@@ -802,6 +802,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         casingTexture.colorSpace = THREE.SRGBColorSpace;
         casingTexture.wrapS = casingTexture.wrapT = THREE.RepeatWrapping;
         casingTexture.repeat.set(64, 64);
+        casingTexture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
         const studioMat = new THREE.MeshBasicMaterial({map: casingTexture, side: THREE.BackSide});
         const studioMesh = new THREE.Mesh(studioGeo, studioMat);
         studioMesh.position.y = 100 - (VOXEL_SIZE / 2) - 0.01; 
@@ -811,7 +812,34 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         const worldGroup = new THREE.Group();
         scene.add(worldGroup);
 
-        const gridHelper = new THREE.GridHelper(20, 40, 0x444444, 0x222222);
+        // Keep the half-metre modeling grid legible at grazing angles in either eye.
+        const gridMaterial = new THREE.ShaderMaterial({
+            transparent: true, depthWrite: false, side: THREE.DoubleSide,
+            uniforms: { minor: { value: new THREE.Color(0x222222) }, axis: { value: new THREE.Color(0x444444) } },
+            vertexShader: `varying vec2 cell;
+                void main() {
+                    cell = position.xy * 2.0;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }`,
+            fragmentShader: `varying vec2 cell;
+                uniform vec3 minor, axis;
+                void main() {
+                    vec2 footprint = max(fwidth(cell), vec2(0.00001));
+                    vec2 distanceToLine = abs(fract(cell + 0.5) - 0.5) / footprint;
+                    vec2 lines = (1.0 - smoothstep(vec2(0.0), vec2(1.0), distanceToLine))
+                               * (1.0 - smoothstep(vec2(0.15), vec2(0.5), footprint));
+                    vec2 axes = 1.0 - smoothstep(vec2(0.0), vec2(1.0), abs(cell) / footprint);
+                    float a = max(axes.x, axes.y);
+                    float coverage = max(a, max(lines.x, lines.y));
+                    if (coverage < 0.005) discard;
+                    gl_FragColor = vec4(mix(minor, axis, a), coverage);
+                    #include <colorspace_fragment>
+                }`
+        });
+        gridMaterial.forceSinglePass = true;
+        const gridHelper = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), gridMaterial);
+        gridHelper.rotation.x = -Math.PI / 2;
+        gridHelper.renderOrder = -1;
         gridHelper.position.y = -(VOXEL_SIZE / 2) - 0.001; 
         gridHelper.matrixAutoUpdate = false; gridHelper.updateMatrix();
         worldGroup.add(gridHelper);
@@ -837,6 +865,9 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 `#include <color_fragment>
                 float edge = max(abs(neonFace.x), abs(neonFace.y));
                 float core = 1.0 - smoothstep(0.22, 0.51, edge);
+                // Blend toward the face average once individual rims become subpixel.
+                float footprint = max(fwidth(neonFace.x), fwidth(neonFace.y));
+                core = mix(core, 0.55, smoothstep(0.12, 0.65, footprint));
                 vec3 tint = diffuseColor.rgb;
                 float peak = max(tint.r, max(tint.g, tint.b));
                 diffuseColor.rgb = tint * (0.42 + 0.92 * core) + vec3(0.19 * peak * core * core);`
@@ -855,18 +886,9 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         }
 
         // --- Performance Mode (Points) Textures & Materials ---
-        const perfCanvas = document.createElement('canvas');
-        perfCanvas.width = 64; perfCanvas.height = 64;
-        const perfCtx = perfCanvas.getContext('2d');
-        perfCtx.fillStyle = '#ffffff'; perfCtx.fillRect(0, 0, 64, 64);
-        perfCtx.lineWidth = 8; perfCtx.strokeStyle = 'rgba(0, 0, 0, 0.4)'; perfCtx.strokeRect(4, 4, 56, 56);
-        perfCtx.fillStyle = 'rgba(0,0,0,0.15)'; perfCtx.fillRect(0, 32, 64, 32);
-        const perfTex = new THREE.CanvasTexture(perfCanvas);
-        perfTex.colorSpace = THREE.SRGBColorSpace;
-        
         const ptSize = VOXEL_SIZE * 1.15;
-        const ptSolid = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, map: perfTex, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
-        const ptGlass = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, map: perfTex, transparent: true, opacity: 0.4, depthWrite: false, depthFunc: THREE.LessEqualDepth });
+        const ptSolid = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
+        const ptGlass = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, transparent: true, opacity: 0.4, depthWrite: false, depthFunc: THREE.LessEqualDepth });
         const ptEmission = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
         ptEmission.onBeforeCompile = shader => {
             shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>',
@@ -876,7 +898,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 float peak = max(diffuseColor.r, max(diffuseColor.g, diffuseColor.b));
                 diffuseColor.rgb = diffuseColor.rgb * (0.48 + 0.88 * core) + vec3(0.19 * peak * core * core);`);
         };
-        const ptMetal = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, map: perfTex, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
+        const ptMetal = new THREE.PointsMaterial({ size: ptSize, vertexColors: true, sizeAttenuation: true, alphaTest: 0.1, depthFunc: THREE.LessEqualDepth });
         const perfMaterials = [ptSolid, ptGlass, ptEmission, ptMetal];
 
         // A culled mesh can miss several uploads. Retain one encompassing range until Three consumes it.
@@ -892,19 +914,16 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         }
 
         class ChunkLayer {
-            constructor(cx, cy, cz, matType) {
+            constructor(cx, cy, cz, matType, capacity = 256) {
                 this.matType = matType;
                 this.material = voxelMaterials[matType];
-                this.capacity = 256; // Grow as needed; sparse chunks no longer reserve 4,096 instances per material.
+                this.capacity = capacity; // Grow as needed; sparse chunks no longer reserve 4,096 instances per material.
                 this.count = 0;
                 this.mesh = new THREE.InstancedMesh(voxelGeometry, this.material, this.capacity);
                 this.mesh.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); 
                 this.mesh.matrixAutoUpdate = false; this.mesh.updateMatrix();
                 this.mesh.visible = false; 
                 this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-                
-                const mArr = this.mesh.instanceMatrix.array;
-                for (let i = 0; i < this.capacity; i++) { mArr[i*16] = 1; mArr[i*16+5] = 1; mArr[i*16+10] = 1; mArr[i*16+15] = 1; }
                 
                 this.mesh.instanceColor = new THREE.InstancedBufferAttribute(new Uint8Array(this.capacity * 3), 3, true);
                 this.mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
@@ -941,9 +960,6 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 this.mesh.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE); 
                 this.mesh.matrixAutoUpdate = false; this.mesh.updateMatrix();
                 this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-                
-                const mArr = this.mesh.instanceMatrix.array;
-                for (let i = this.count; i < newCapacity; i++) { mArr[i*16] = 1; mArr[i*16+5] = 1; mArr[i*16+10] = 1; mArr[i*16+15] = 1; }
                 
                 this.mesh.instanceColor = new THREE.InstancedBufferAttribute(new Uint8Array(newCapacity * 3), 3, true);
                 this.mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
@@ -1475,6 +1491,7 @@ function updatePreviews() {
                     getPreviewGroup(fx + (sym.tx || 0) * VOXEL_SIZE, fy + (sym.ty || 0) * VOXEL_SIZE, fz + (sym.tz || 0) * VOXEL_SIZE, sym.sx, sym.sy, sym.sz, step, rot);
                 }
             }
+            for (let i = pIdx; i < previewGroups.length; i++) previewGroups[i].visible = false;
         }
 
         function createMirrorProxies(baseMesh) {
@@ -1528,7 +1545,7 @@ function updatePreviews() {
             while (proxies.length < targetSyms.length) {
                 let proxy;
                 if (baseMesh.isInstancedMesh) {
-                    proxy = new THREE.InstancedMesh(baseMesh.geometry, baseMesh.material, baseMesh.instanceMatrix.count);
+                    proxy = new THREE.InstancedMesh(baseMesh.geometry, baseMesh.material, 0);
                     proxy.instanceMatrix = baseMesh.instanceMatrix;
                     if (baseMesh.instanceColor) proxy.instanceColor = baseMesh.instanceColor;
                 } else {
@@ -4281,12 +4298,8 @@ if (cy >= 60 && cy <= 90) {
                         if ((mask & (1 << m)) === 0) continue;
                         const count = view.getUint16(ptr, true); ptr += 2;
 
-                        const layer = new ChunkLayer(cx, cy, cz, m);
-                        if (count > layer.capacity) {
-                            let reqCap = layer.capacity;
-                            while (reqCap < count) reqCap *= 2;
-                            layer.resizeCapacity(Math.min(CHUNK_VOL, reqCap));
-                        }
+                        const capacity = Math.max(256, 2 ** Math.ceil(Math.log2(Math.max(1, count))));
+                        const layer = new ChunkLayer(cx, cy, cz, m, capacity);
                         chunk.layers[m] = layer;
 
                         const vToI = layer.voxelToIndex;
