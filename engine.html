@@ -1,5 +1,5 @@
  	<!-- 
-    VoxTrotBravo v4.9
+    VoxTrotBravo v4.10
     Copyright (c) 2024-2026 Rob Reynolds. All Rights Reserved.
     Unauthorized copying, modification, or distribution is strictly prohibited.
 -->
@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxTrotBravo v4.9</title>
+    <title>VoxTrotBravo v4.10</title>
     <style>
 :root{color-scheme:dark;--ink:#f0e8d3;--muted:#aeb8ac;--accent:#ffb064;--accent2:#b4e58b;--surface:#1b2521;--line:#56685a}
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111715;color:var(--ink);font-family:Consolas,'Lucida Console',monospace}canvas{display:block}button{font:inherit}
@@ -55,13 +55,13 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
 </head>
 <body>
     <div id="loading-overlay">
-        <h2>VoxTrotBravo v4.9</h2>
+        <h2>VoxTrotBravo v4.10</h2>
         <p>Preparing studio…</p>
         <div class="spinner"></div>
     </div>
 
     <section id="ui-container" class="glass-surface" aria-label="VoxTrotBravo controller guide">
-        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.9</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
+        <div class="brand-head"><div class="brand-logo"><div class="brand-mark" aria-hidden="true"></div><div><h1>VoxTrotBravo <small>v4.10</small></h1></div></div><button id="toggle-help" class="icon-btn" aria-label="Show or hide controller guide" title="Collapse guide">−</button></div>
         <div class="ui-content"><div class="eyebrow">Controller quick guide</div>
             <div class="command-rows">
                 <div class="command"><b>A · Right</b><span>Current tool settings / rotate</span></div>
@@ -87,7 +87,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         <input type="file" id="vtb-file-input" accept=".vtb" style="display:none" />
     </div>
 
-    <div id="xr-launch"><button id="launch-vr" disabled>Enter VR</button> <button id="launch-ar" disabled>Enter passthrough</button><output id="session-status" aria-live="polite"></output></div>
+    <div id="xr-launch"><label style="color:#fff;background:#34383a;padding:4px 8px">Headset view <select id="headset-view"><option value="studio">Studio</option><option value="model">Model only</option><option value="empty">Empty view</option></select></label><button id="launch-vr" disabled>Enter VR</button> <button id="launch-ar" disabled>Enter passthrough</button><output id="session-status" aria-live="polite"></output></div>
     <script type="module">
         import * as THREE from 'three';
 
@@ -666,6 +666,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         const sessionStatus = document.getElementById('session-status');
         const supportedModes = new Set();
         let activeSession = null, activeMode = null, requesting = false;
+        const viewSelector = document.getElementById('headset-view');
         const studioBackground = scene.background;
         function refreshLaunchButtons() {
             for (const [mode, button] of xrButtons) {
@@ -690,6 +691,10 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 'Passthrough unavailable here. Try Quest Browser.' : '';
         }
         function restoreStudio() {
+            worldGroup.add(modelGroup);
+            modelGroup.matrixAutoUpdate = true;
+            modelGroup.updateMatrix();
+            viewSelector.disabled = false;
             scene.background = studioBackground;
             studioMesh.visible = true;
             gridHelper.visible = true;
@@ -712,6 +717,8 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                         throw new Error('This runtime supplies an opaque view. Try Quest Browser.');
                     activeSession = session;
                     activeMode = mode;
+                    viewSelector.disabled = true;
+                    if (viewSelector.value === 'model') testScene.add(modelGroup);
                     session.addEventListener('end', restoreStudio, {once:true});
                     if (mode === 'immersive-ar') {
                         scene.background = null;
@@ -811,6 +818,15 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
 
         const worldGroup = new THREE.Group();
         scene.add(worldGroup);
+        const modelGroup = new THREE.Group();
+        worldGroup.add(modelGroup);
+        const testScene = new THREE.Scene();
+        testScene.background = studioBackground;
+        testScene.environment = scene.environment;
+        testScene.add(ambientLight.clone(), directionalLight.clone());
+        function testingView() {
+            return renderer.xr.isPresenting && viewSelector.value !== 'studio';
+        }
 
         // Keep the half-metre modeling grid legible at grazing angles in either eye.
         const gridMaterial = new THREE.ShaderMaterial({
@@ -929,7 +945,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 this.mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
                 this.mesh.count = 0;
                 this.mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3((cx * CHUNK_SIZE + (CHUNK_SIZE - 1) / 2), (cy * CHUNK_SIZE + (CHUNK_SIZE - 1) / 2), (cz * CHUNK_SIZE + (CHUNK_SIZE - 1) / 2)), CHUNK_SIZE * 0.87);
-                worldGroup.add(this.mesh);
+                modelGroup.add(this.mesh);
 
                 this.ptsPos = new Float32Array(this.capacity * 3);
                 const ptsGeo = new THREE.BufferGeometry();
@@ -941,7 +957,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 this.pointsMesh.visible = false;
                 this.pointsMesh.boundingSphere = this.mesh.boundingSphere;
                 ptsGeo.boundingSphere = this.mesh.boundingSphere;
-                worldGroup.add(this.pointsMesh);
+                modelGroup.add(this.pointsMesh);
 
                 this.voxelToIndex = new Uint16Array(CHUNK_VOL);
                 this.voxelToIndex.fill(65535); 
@@ -980,7 +996,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 this.mesh.count = this.count;
                 this.mesh.boundingSphere = oldMesh.boundingSphere;
                 this.mesh.visible = oldMesh.visible;
-                worldGroup.remove(oldMesh); worldGroup.add(this.mesh);
+                modelGroup.remove(oldMesh); modelGroup.add(this.mesh);
                 oldMesh.dispose();
 
                 const ptsGeo = new THREE.BufferGeometry();
@@ -993,7 +1009,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
                 this.pointsMesh.visible = oldPtsMesh.visible;
                 this.pointsMesh.boundingSphere = oldPtsMesh.boundingSphere;
                 this.pointsMesh.geometry.setDrawRange(0, this.count);
-                worldGroup.remove(oldPtsMesh); worldGroup.add(this.pointsMesh);
+                modelGroup.remove(oldPtsMesh); modelGroup.add(this.pointsMesh);
                 oldPtsMesh.geometry.dispose();
 
                 const indices = new Uint16Array(newCapacity);
@@ -1143,14 +1159,15 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
         }
 
         // --- Previews & Cursors ---
-        const cursorLeftMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, wireframe: true });
+        const cursorLeftMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, wireframe: true, depthWrite: false });
         const cursorLeft = new THREE.Mesh(new THREE.BufferGeometry(), cursorLeftMat);
         worldGroup.add(cursorLeft);
 
-        const cursorRightMat = new THREE.MeshBasicMaterial({ color: 0xff0055, transparent: true, opacity: 0.8, wireframe: true });
+        const cursorRightMat = new THREE.MeshBasicMaterial({ color: 0xff0055, transparent: true, opacity: 0.8, wireframe: true, depthWrite: false });
         const cursorRight = new THREE.Mesh(new THREE.BufferGeometry(), cursorRightMat);
         worldGroup.add(cursorRight);
 
+        cursorLeft.visible = cursorRight.visible = false;
         const boxPreviewMat = new THREE.MeshBasicMaterial({ color: 0x4facfe, transparent: true, opacity: 0.3, wireframe: false });
         const boxPreviewMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), boxPreviewMat);
         boxPreviewMesh.matrixAutoUpdate = false; boxPreviewMesh.visible = false;
@@ -1209,7 +1226,7 @@ button:focus-visible{outline:3px solid #dc732f;outline-offset:2px}
             lineWireframeMesh.visible = linePreviewMesh.visible = false;
         }
 
-const bucketPreviewMesh = new THREE.InstancedMesh(voxelGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, depthTest: false }), 80000);
+const bucketPreviewMesh = new THREE.InstancedMesh(voxelGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, depthTest: false, depthWrite: false }), 80000);
         bucketPreviewMesh.scale.set(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
         bucketPreviewMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); 
         bucketPreviewMesh.matrixAutoUpdate = false; 
@@ -4109,8 +4126,8 @@ if (cy >= 60 && cy <= 90) {
                     for (let m = 0; m < 4; m++) {
                         const layer = chunk.layers[m];
                         if (layer) {
-                            worldGroup.remove(layer.mesh);
-                            worldGroup.remove(layer.pointsMesh);
+                            modelGroup.remove(layer.mesh);
+                            modelGroup.remove(layer.pointsMesh);
                             layer.mesh.dispose();
                             layer.pointsMesh.geometry.dispose();
                         }
@@ -7042,7 +7059,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
 
 
 
-        function onSelectStart(event) {
+        function onSelectStart(event) { if (testingView()) return;
             // Completely bypass native select events when analog pressure is driving the brush or sculpt
             if (event && ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode))) return;
             
@@ -7256,7 +7273,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
             }
         }
 
-        function onSelectEnd(event) {
+        function onSelectEnd(event) { if (testingView()) return;
             if (this === xrLeft && leftUtilityPress) {
                 // In pressure mode the analog release owns the gesture.
                 if (event && ((activeTool === 'brush' && brushPressureMode) || (activeTool === 'sculpt' && sculptPressureMode))) return;
@@ -7376,6 +7393,10 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
             });
         }
         renderer.xr.addEventListener('sessionend', () => {
+            cursorLeft.visible = cursorRight.visible = false;
+            for (const cursor of [cursorLeft, cursorRight]) {
+                for (const proxy of proxyMap.get(cursor) || []) proxy.visible = false;
+            }
             leftUtilityPress = lineAnchorHeld = false;
             leftMenuNeedsUpdate = true;
         });
@@ -7384,9 +7405,9 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
         controller0.addEventListener('squeezestart', onSqueezeStart); controller1.addEventListener('squeezestart', onSqueezeStart);
         controller0.addEventListener('squeezeend', onSqueezeEnd); controller1.addEventListener('squeezeend', onSqueezeEnd);
 
-        function onSqueezeStart() { if(this===xrRight){ isRightGripping=true; if(gripRight) gripRight.getWorldPosition(prevRightPos); } else if(this===xrLeft){ isLeftGripping=true; if(gripLeft) gripLeft.getWorldPosition(prevLeftPos); } if(isRightGripping&&isLeftGripping){ prevGripDist=prevRightPos.distanceTo(prevLeftPos);
+        function onSqueezeStart() { if (testingView()) return; if(this===xrRight){ isRightGripping=true; if(gripRight) gripRight.getWorldPosition(prevRightPos); } else if(this===xrLeft){ isLeftGripping=true; if(gripLeft) gripLeft.getWorldPosition(prevLeftPos); } if(isRightGripping&&isLeftGripping){ prevGripDist=prevRightPos.distanceTo(prevLeftPos);
         prevMid.copy(prevRightPos).lerp(prevLeftPos,0.5); prevHandVec.subVectors(prevRightPos,prevLeftPos).normalize(); } }
-        function onSqueezeEnd() { if(this===xrRight) isRightGripping=false; else if(this===xrLeft) isLeftGripping=false;
+        function onSqueezeEnd() { if (testingView()) return; if(this===xrRight) isRightGripping=false; else if(this===xrLeft) isLeftGripping=false;
         }
 
         let xConsumedBySheet = false;
@@ -7533,6 +7554,15 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
         let lastDrawnLeftEffSize = -1;
         
         renderer.setAnimationLoop(() => {
+            if (testingView()) {
+                flushDirtyChunks();
+                worldGroup.updateWorldMatrix(true, false);
+                modelGroup.matrixAutoUpdate = false;
+                modelGroup.matrix.copy(worldGroup.matrixWorld);
+                modelGroup.matrixWorldNeedsUpdate = true;
+                renderer.render(testScene, camera);
+                return;
+            }
             const hudTime=performance.now();
             if(!renderer.xr.isPresenting && hudTime-hudTick>1500) {hudTick=hudTime;updateStudioHUD();}
             shiftProgress += 0.005 * shiftDir; if(shiftProgress>=1)shiftDir=-1; if(shiftProgress<=0)shiftDir=1;
@@ -7606,7 +7636,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                     } else {
                         cursorLeft.quaternion.identity();
                     }
-                    cursorLeft.updateMatrix(); cursorLeft.visible=true; 
+                    cursorLeft.updateMatrix(); cursorLeft.visible=xrLeft.visible; 
                 } else cursorLeft.visible=false;
                 
                 if(xrRight){ 
@@ -7620,7 +7650,7 @@ let isDrawing=false, isErasing=false, isColorPicking=false, menuClickActive=fals
                     } else {
                         cursorRight.quaternion.identity();
                     }
-                    cursorRight.updateMatrix(); cursorRight.visible=true; 
+                    cursorRight.updateMatrix(); cursorRight.visible=xrRight.visible; 
 
                     worldGroup.getWorldQuaternion(tempQuat2).invert();
                     xrRight.getWorldQuaternion(currentGradientQuat);
